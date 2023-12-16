@@ -1,0 +1,19 @@
+{
+  "name": "mora-exams-ranking-script",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/generate-rank.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.4.0-pre.5",
+    "drizzle-orm": "^0.29.1"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "drizzle-kit": "^0.20.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
