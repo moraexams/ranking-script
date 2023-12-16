@@ -11,32 +11,6 @@ import {
 
 const timestamp = new Date().toISOString();
 
-const subjectsZScoreCalculationValues: Record<
-	Subject,
-	SubjectZScoreCalculationValues
-> = {
-	bio: {
-		average: undefined,
-		standardDeviation: undefined,
-	},
-	physics: {
-		average: undefined,
-		standardDeviation: undefined,
-	},
-	maths: {
-		average: undefined,
-		standardDeviation: undefined,
-	},
-	ict: {
-		average: undefined,
-		standardDeviation: undefined,
-	},
-	chemistry: {
-		average: undefined,
-		standardDeviation: undefined,
-	},
-};
-
 function seperateSubjectMarksIntoView(subject: Subject) {
 	console.log("seperate subject marks into view", subject);
 	let subjectMarksColumnBaseName: string;
@@ -119,20 +93,20 @@ function seperateSubjectMarksIntoView(subject: Subject) {
 }
 
 function calculateZScoreForSubject(subject: Subject) {
-	console.log(
-		"calculate z-score for subject:",
-		subject,
-		subjectsZScoreCalculationValues[subject]
-	);
 	return sql.raw(`
 		CREATE VIEW ${view__Z_SCORE_FOR_SUBJECT(subject)} AS
- 		SELECT
-        t.index_no,
-        (
-            (t.total - ${subjectsZScoreCalculationValues[subject].average}) / 
-							${subjectsZScoreCalculationValues[subject].standardDeviation}
-        ) as zscore
-    FROM ${view__SUBJECT_FINAL_MARKS(subject)} AS t`);
+		SELECT
+				t.index_no,
+				(
+					(t.total - avg_total.avg_total) / avg_total.stdev_total
+				) as zscore
+		FROM
+				${view__Z_SCORE_FOR_SUBJECT(subject)} AS t
+		JOIN
+				(SELECT AVG(total) AS avg_total, 
+								SQRT(AVG(total * total) - AVG(total) * AVG(total)) AS stdev_total
+				FROM ${view__Z_SCORE_FOR_SUBJECT(subject)}) AS avg_total ON 1=1
+		`);
 	// return sql.raw(`CREATE VIEW ${view__zScoreForSubject(subject)} AS
 	// SELECT
 	// 	t.index_no,
@@ -195,66 +169,24 @@ const statements = [
 	seperateSubjectMarksIntoView("physics"),
 	seperateSubjectMarksIntoView("chemistry"),
 	seperateSubjectMarksIntoView("ict"),
-];
-
-const statements3 = [
 	dropViewIfExists(view__Z_SCORE_FOR_SUBJECT("bio")),
 	dropViewIfExists(view__Z_SCORE_FOR_SUBJECT("maths")),
 	dropViewIfExists(view__Z_SCORE_FOR_SUBJECT("physics")),
 	dropViewIfExists(view__Z_SCORE_FOR_SUBJECT("chemistry")),
 	dropViewIfExists(view__Z_SCORE_FOR_SUBJECT("ict")),
-	calculateZScoreForSubject.bind(null, "bio"),
-	calculateZScoreForSubject.bind(null, "maths"),
-	calculateZScoreForSubject.bind(null, "physics"),
-	calculateZScoreForSubject.bind(null, "chemistry"),
-	calculateZScoreForSubject.bind(null, "ict"),
+	calculateZScoreForSubject("bio"),
+	calculateZScoreForSubject("maths"),
+	calculateZScoreForSubject("physics"),
+	calculateZScoreForSubject("chemistry"),
+	calculateZScoreForSubject("ict"),
 	dropViewIfExists(view__Z_SCORE_FINAL("MATHS")),
 	dropViewIfExists(view__Z_SCORE_FINAL("BIO")),
 	finalizeZScoreForStream("MATHS"),
 	finalizeZScoreForStream("BIO"),
 ];
 
-async function findZScoreCalculationValues() {
-	const subjects = ["bio", "maths", "ict", "physics", "chemistry"] as const;
-
-	const statements2 = subjects.map((subject) =>
-		db.run(
-			sql.raw(`SELECT
-			AVG(t.total) as average,
-			AVG(t.total * t.total) - (AVG(t.total) * AVG(t.total)) as variance
-		FROM ${view__SUBJECT_FINAL_MARKS(subject)} AS t`)
-		)
-	);
-
-	// @ts-expect-error
-	const batchResponse2 = await db.batch(statements2);
-
-	for (let i = 0; i < batchResponse2.length; i++) {
-		const item = batchResponse2[i];
-		const { "0": average, "1": variance } = item.rows[0];
-		const _subject = subjects[i];
-		console.log(_subject, {
-			average,
-			variance,
-		});
-
-		if (subjectsZScoreCalculationValues[_subject] == undefined) {
-			console.log(`subjectsZScoreCalculationValues.${_subject} is undefined`);
-			process.exit(1);
-		}
-		subjectsZScoreCalculationValues[_subject]["average"] = average;
-		subjectsZScoreCalculationValues[_subject]["standardDeviation"] =
-			Math.sqrt(variance);
-	}
-
-	writeOutput(batchResponse2, 2);
-}
-
-function writeOutput(json: unknown, id: unknown = undefined) {
+function writeOutput(json: unknown) {
 	let name = `./logs/output-${timestamp}.json`;
-	if (id != undefined) {
-		name = `./logs/output-${id}-${timestamp}.json`;
-	}
 	return writeFile(name, JSON.stringify(json, null, 2));
 }
 
@@ -270,31 +202,12 @@ function writeOutput(json: unknown, id: unknown = undefined) {
 		})
 	);
 	console.timeEnd(id);
-	writeOutput(batchResponse, 1);
+	writeOutput(batchResponse);
 
-	await findZScoreCalculationValues();
+	// const d = await db.run(
+	// 	sql.raw(`
 
-	const d = await db.run(
-		sql.raw(`SELECT
-        t.index_no,
-        (
-            (t.total - ${subjectsZScoreCalculationValues["maths"].average}) / 
-							${subjectsZScoreCalculationValues["maths"].standardDeviation}
-            
-        ) as zscore
-    FROM ${view__SUBJECT_FINAL_MARKS("maths")} AS t`)
-	);
-	console.log(d);
-
-	const batchResponse3 = await db.batch(
-		// @ts-expect-error
-		statements3.map((statement) => {
-			if (typeof statement == "function") {
-				return db.run(statement());
-			}
-			return db.run(statement);
-		})
-	);
-	console.timeEnd(id);
-	writeOutput(batchResponse3, 3);
+	// 	`)
+	// );
+	// console.log(d);
 })();
