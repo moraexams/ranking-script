@@ -12,3 +12,8 @@ export function view__Z_SCORE_FOR_SUBJECT(subject: Subject) {
 export function view__Z_SCORE_FINAL(stream: Stream) {
 	return `zscore_final_${stream.toLowerCase()}`;
 }
+export function view__STREAM_RANKING(stream: Stream) {
+	return `stream_ranking_${stream.toLowerCase()}`;
+}
+
+export const table__STUDENTS = "tbl_students";

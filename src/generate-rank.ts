@@ -1,12 +1,14 @@
 import { writeFile } from "fs/promises";
 import { sql } from "drizzle-orm";
 import { db } from "./db";
-import { Subject, SubjectZScoreCalculationValues, Stream } from "./types";
+import { Subject, Stream } from "./types";
 import {
 	view__SUBJECT_FINAL_MARKS,
 	view__Z_SCORE_FOR_SUBJECT,
 	view__Z_SCORE_FINAL,
 	view__FINAL_MARKS,
+	view__STREAM_RANKING,
+	table__STUDENTS,
 } from "./constants";
 
 const timestamp = new Date().toISOString();
@@ -141,6 +143,23 @@ function finalizeZScoreForStream(stream: Stream) {
 			ON ${subject3_zscore_view}.index_no = ${subject1_zscore_view}.index_no`);
 }
 
+function rankForStream(stream: Stream) {
+	return sql.raw(`CREATE VIEW ${view__STREAM_RANKING(stream)} AS
+	SELECT
+		t.index_no,
+RANK() OVER (
+	ORDER BY t.zscore DESC
+) island_rank,
+RANK() OVER (
+	PARTITION BY ${table__STUDENTS}.district_id_ranking
+	ORDER BY t.zscore DESC
+) district_rank
+	FROM ${view__Z_SCORE_FINAL(stream)} as t
+	JOIN ${table__STUDENTS}
+	ON ${table__STUDENTS}.index_no = t.index_no
+	`);
+}
+
 function dropViewIfExists(name: string) {
 	return sql.raw(`DROP VIEW IF EXISTS ${name}`);
 }
@@ -183,6 +202,10 @@ const statements = [
 	dropViewIfExists(view__Z_SCORE_FINAL("BIO")),
 	finalizeZScoreForStream("MATHS"),
 	finalizeZScoreForStream("BIO"),
+	dropViewIfExists(view__STREAM_RANKING("MATHS")),
+	dropViewIfExists(view__STREAM_RANKING("BIO")),
+	rankForStream("MATHS"),
+	rankForStream("BIO"),
 ];
 
 function writeOutput(json: unknown) {
