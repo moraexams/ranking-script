@@ -19,15 +19,21 @@ export function dropViewIfExists(name: string) {
 export function calculateFinalMarksForAll() {
 	return sql.raw(`CREATE VIEW ${view__FINAL_MARKS} AS
 	SELECT
-		tbl_students.index_no,
-		((tbl_marks.subject1_part1 + tbl_marks.subject1_part2)/2) AS subject1_total,
-		((tbl_marks.subject2_part1 + tbl_marks.subject2_part2)/2) AS subject2_total,
-		((tbl_marks.subject3_part1 + tbl_marks.subject3_part2)/2) AS subject3_total,
-		tbl_students.subject_group_id,
-		tbl_students.district_id_ranking
+		tbl_marks.index_no,
+		CASE 
+			WHEN tbl_marks.subject1_part1 IS NULL AND tbl_marks.subject1_part2 IS NULL THEN NULL
+			ELSE (COALESCE(tbl_marks.subject1_part1, 0) + COALESCE(tbl_marks.subject1_part2, 0))/2
+		END AS subject1_total,
+		CASE 
+			WHEN tbl_marks.subject2_part1 IS NULL AND tbl_marks.subject2_part2 IS NULL THEN NULL
+			ELSE (COALESCE(tbl_marks.subject2_part1, 0) + COALESCE(tbl_marks.subject2_part2, 0))/2
+		END AS subject2_total,
+		CASE 
+			WHEN tbl_marks.subject3_part1 IS NULL AND tbl_marks.subject3_part2 IS NULL THEN NULL
+			ELSE (COALESCE(tbl_marks.subject3_part1, 0) + COALESCE(tbl_marks.subject3_part2, 0))/2
+		END AS subject3_total
 	FROM tbl_marks
-	JOIN tbl_students
-	ON tbl_marks.index_no = tbl_students.index_no`);
+	`);
 }
 
 export function separateSubjectMarksIntoView(subject: Subject) {
@@ -44,63 +50,39 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 		process.exit(0);
 	}
 
+	let whereCondition: string;
 	if (subject == "bio") {
-		return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
+		whereCondition =
+			"total IS NOT NULL AND (tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)')";
+	} else if (subject == "maths") {
+		whereCondition =
+			"total IS NOT NULL AND (tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'ICT (Maths)')";
+	} else if (subject == "physics") {
+		whereCondition =
+			"total IS NOT NULL AND (tbl_students.subject_group_id <> 'Other')";
+	} else if (subject == "chemistry") {
+		whereCondition =
+			"total IS NOT NULL AND (tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)')";
+	} else if (subject == "ict") {
+		whereCondition = `total IS NOT NULL AND (tbl_students.subject_group_id = 'ICT (Maths)' OR tbl_students.subject_group_id = 'Other')`;
+	} else {
+		assertNever(subject);
+	}
+
+	return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
 	SELECT
 		tbl_students.index_no,
-		((tbl_marks.${subjectMarksColumnBaseName}_part1 + tbl_marks.${subjectMarksColumnBaseName}_part2)/2) AS total
+		(
+			(
+				COALESCE(tbl_marks.${subjectMarksColumnBaseName}_part1, 0) +
+				COALESCE(tbl_marks.${subjectMarksColumnBaseName}_part2, 0)
+			)/2
+		) AS total
 	FROM tbl_marks
 	JOIN tbl_students
 	ON tbl_marks.index_no = tbl_students.index_no
-	WHERE total IS NOT NULL AND (tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)')`);
-	}
+	WHERE ${whereCondition}`);
 
-	if (subject == "maths") {
-		return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
-	SELECT
-		tbl_students.index_no,
-		((tbl_marks.${subjectMarksColumnBaseName}_part1 + tbl_marks.${subjectMarksColumnBaseName}_part2)/2) AS total
-	FROM tbl_marks
-	JOIN tbl_students
-	ON tbl_marks.index_no = tbl_students.index_no
-	WHERE total IS NOT NULL AND (tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'ICT (Maths)')`);
-	}
-
-	if (subject == "physics") {
-		return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
-	SELECT
-		tbl_students.index_no,
-		((tbl_marks.${subjectMarksColumnBaseName}_part1 + tbl_marks.${subjectMarksColumnBaseName}_part2)/2) AS total
-	FROM tbl_marks
-	JOIN tbl_students
-	ON tbl_marks.index_no = tbl_students.index_no
-	WHERE total IS NOT NULL AND (tbl_students.subject_group_id <> 'Other')`);
-	}
-
-	if (subject == "chemistry") {
-		return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
-	SELECT
-		tbl_students.index_no,
-		((tbl_marks.${subjectMarksColumnBaseName}_part1 + tbl_marks.${subjectMarksColumnBaseName}_part2)/2) AS total
-	FROM tbl_marks
-	JOIN tbl_students
-	ON tbl_marks.index_no = tbl_students.index_no
-	WHERE total IS NOT NULL AND (tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)')`);
-	}
-
-	if (subject == "ict") {
-		return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
-	SELECT
-		tbl_students.index_no,
-		((tbl_marks.${subjectMarksColumnBaseName}_part1 + tbl_marks.${subjectMarksColumnBaseName}_part2)/2) AS total
-	FROM tbl_marks
-	JOIN tbl_students
-	ON tbl_marks.index_no = tbl_students.index_no
-	WHERE total IS NOT NULL AND (tbl_students.subject_group_id = 'ICT (Maths)' OR tbl_students.subject_group_id = 'Other')`);
-	}
-
-	console.error("Unknown subject:", subject);
-	process.exit(1);
 	// return sql.raw(`CREATE VIEW ${view__subjectFinalMarks(subject)} AS
 	// SELECT
 	// 	tbl_students.index_no,
@@ -181,4 +163,8 @@ export function writeOutput(json: unknown) {
 	const timestamp = new Date().toISOString();
 	let name = `./logs/output-${timestamp}.json`;
 	return writeFile(name, JSON.stringify(json, null, 2));
+}
+
+function assertNever(subject: never): never {
+	throw new Error(`${subject} is expected to be type:never`);
 }
