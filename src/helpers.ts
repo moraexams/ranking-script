@@ -38,33 +38,34 @@ export function calculateFinalMarksForAll() {
 
 export function separateSubjectMarksIntoView(subject: Subject) {
 	console.log("seperate subject marks into view", subject);
-	let subjectMarksColumnBaseName: string;
+	let subjectMarksColumnName: string;
 	if (subject == "maths" || subject == "bio") {
-		subjectMarksColumnBaseName = "subject1";
+		subjectMarksColumnName = "subject1";
 	} else if (subject == "physics") {
-		subjectMarksColumnBaseName = "subject2";
+		subjectMarksColumnName = "subject2";
 	} else if (subject == "chemistry" || subject == "ict") {
-		subjectMarksColumnBaseName = "subject3";
+		subjectMarksColumnName = "subject3";
 	} else {
 		console.log("ERROR: Unknown subject:", subject);
 		process.exit(0);
 	}
+	subjectMarksColumnName += "_total";
 
 	let whereCondition: string;
 	if (subject == "bio") {
 		whereCondition =
-			"total IS NOT NULL AND (tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)')";
+			"tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)'";
 	} else if (subject == "maths") {
 		whereCondition =
-			"total IS NOT NULL AND (tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'ICT (Maths)')";
+			"tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'ICT (Maths)'";
 	} else if (subject == "physics") {
 		whereCondition =
-			"total IS NOT NULL AND (tbl_students.subject_group_id <> 'Other')";
+			"tbl_students.subject_group_id <> 'Other' AND tbl_students.subject_group_id <> 'Agri (BIO)'";
 	} else if (subject == "chemistry") {
 		whereCondition =
-			"total IS NOT NULL AND (tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)')";
+			"tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)'";
 	} else if (subject == "ict") {
-		whereCondition = `total IS NOT NULL AND (tbl_students.subject_group_id = 'ICT (Maths)' OR tbl_students.subject_group_id = 'Other')`;
+		whereCondition = `tbl_students.subject_group_id = 'ICT (Maths)' OR tbl_students.subject_group_id = 'Other'`;
 	} else {
 		assertNever(subject);
 	}
@@ -72,16 +73,11 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 	return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
 	SELECT
 		tbl_students.index_no,
-		(
-			(
-				COALESCE(tbl_marks.${subjectMarksColumnBaseName}_part1, 0) +
-				COALESCE(tbl_marks.${subjectMarksColumnBaseName}_part2, 0)
-			)/2
-		) AS total
-	FROM tbl_marks
+		${view__FINAL_MARKS}.${subjectMarksColumnName} AS total
+	FROM ${view__FINAL_MARKS}
 	JOIN tbl_students
-	ON tbl_marks.index_no = tbl_students.index_no
-	WHERE ${whereCondition}`);
+	ON ${view__FINAL_MARKS}.index_no = tbl_students.index_no
+	WHERE total IS NOT NULL AND ${whereCondition}`);
 
 	// return sql.raw(`CREATE VIEW ${view__subjectFinalMarks(subject)} AS
 	// SELECT
