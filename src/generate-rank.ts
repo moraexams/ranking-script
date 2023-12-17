@@ -103,11 +103,11 @@ function calculateZScoreForSubject(subject: Subject) {
 					(t.total - avg_total.avg_total) / avg_total.stdev_total
 				) as zscore
 		FROM
-				${view__Z_SCORE_FOR_SUBJECT(subject)} AS t
+				${view__SUBJECT_FINAL_MARKS(subject)} AS t
 		JOIN
 				(SELECT AVG(total) AS avg_total, 
 								SQRT(AVG(total * total) - AVG(total) * AVG(total)) AS stdev_total
-				FROM ${view__Z_SCORE_FOR_SUBJECT(subject)}) AS avg_total ON 1=1
+				FROM ${view__SUBJECT_FINAL_MARKS(subject)}) AS avg_total ON 1=1
 		`);
 	// return sql.raw(`CREATE VIEW ${view__zScoreForSubject(subject)} AS
 	// SELECT
