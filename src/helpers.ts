@@ -77,7 +77,7 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 	FROM ${view__FINAL_MARKS}
 	JOIN tbl_students
 	ON ${view__FINAL_MARKS}.index_no = tbl_students.index_no
-	WHERE total IS NOT NULL AND ${whereCondition}`);
+	WHERE ${whereCondition}`);
 
 	// return sql.raw(`CREATE VIEW ${view__subjectFinalMarks(subject)} AS
 	// SELECT
@@ -142,13 +142,13 @@ export function rankForStream(stream: Stream) {
 	return sql.raw(`CREATE VIEW ${view__STREAM_RANKING(stream)} AS
 	SELECT
 		t.index_no,
-RANK() OVER (
-	ORDER BY t.zscore DESC
-) island_rank,
-RANK() OVER (
-	PARTITION BY ${table__STUDENTS}.district_id_ranking
-	ORDER BY t.zscore DESC
-) district_rank
+		RANK() OVER (
+			ORDER BY t.zscore DESC
+		) island_rank,
+		RANK() OVER (
+			PARTITION BY ${table__STUDENTS}.district_id_ranking
+			ORDER BY t.zscore DESC
+		) district_rank
 	FROM ${view__Z_SCORE_FINAL(stream)} as t
 	JOIN ${table__STUDENTS}
 	ON ${table__STUDENTS}.index_no = t.index_no
