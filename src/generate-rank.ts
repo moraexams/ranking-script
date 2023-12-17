@@ -95,7 +95,7 @@ const statements = [
 ];
 
 (async () => {
-	const dropAllViewsResponse = await dropAllViews();
+	await dropAllViews();
 	console.log(`trying to run ${statements.length} statements...`);
 
 	const statementsRanMessage = `ran ${statements.length} statements`;
@@ -109,6 +109,6 @@ const statements = [
 	);
 	totalStatementsRan += statements.length;
 	console.timeEnd(statementsRanMessage);
-	writeOutput([dropAllViewsResponse, batchResponse]);
+	writeOutput(batchResponse);
 	console.log(`Ran ${totalStatementsRan} statements`);
 })();
