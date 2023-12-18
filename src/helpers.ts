@@ -56,29 +56,29 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 	let whereCondition: string;
 	if (subject == "bio") {
 		whereCondition =
-			"tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)'";
+			"students.subject_group_id = 'BIO' OR students.subject_group_id = 'Agri (BIO)'";
 	} else if (subject == "maths") {
 		whereCondition =
-			"tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'ICT (Maths)'";
+			"students.subject_group_id = 'MATHS' OR students.subject_group_id = 'ICT (MATHS)'";
 	} else if (subject == "physics") {
 		whereCondition =
-			"tbl_students.subject_group_id <> 'Other' AND tbl_students.subject_group_id <> 'Agri (BIO)'";
+			"students.subject_group_id = 'MATHS' OR students.subject_group_id = 'BIO' OR students.subject_group_id = 'ICT (MATHS)'";
 	} else if (subject == "chemistry") {
 		whereCondition =
-			"tbl_students.subject_group_id = 'MATHS' OR tbl_students.subject_group_id = 'BIO' OR tbl_students.subject_group_id = 'Agri (BIO)'";
+			"students.subject_group_id = 'MATHS' OR students.subject_group_id = 'BIO' OR students.subject_group_id = 'Agri (BIO)'";
 	} else if (subject == "ict") {
-		whereCondition = `tbl_students.subject_group_id = 'ICT (Maths)' OR tbl_students.subject_group_id = 'Other'`;
+		whereCondition = `students.subject_group_id = 'ICT (MATHS)' OR students.subject_group_id = 'Other'`;
 	} else {
 		assertNever(subject);
 	}
 
 	return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
 	SELECT
-		tbl_students.index_no,
-		${view__FINAL_MARKS}.${subjectMarksColumnName} AS total
-	FROM ${view__FINAL_MARKS}
-	JOIN tbl_students
-	ON ${view__FINAL_MARKS}.index_no = tbl_students.index_no
+		students.index_no,
+		final_marks.${subjectMarksColumnName} AS total
+	FROM ${view__FINAL_MARKS} AS final_marks
+	JOIN ${table__STUDENTS} AS students
+	ON final_marks.index_no = students.index_no
 	WHERE ${whereCondition}`);
 
 	// return sql.raw(`CREATE VIEW ${view__subjectFinalMarks(subject)} AS
