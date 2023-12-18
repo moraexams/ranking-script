@@ -114,30 +114,56 @@ export function calculateZScoreForSubject(subject: Subject) {
 }
 
 export function finalizeZScoreForStream(stream: Stream) {
-	let subject1_zscore_view, subject2_zscore_view, subject3_zscore_view;
-
-	if (stream == "MATHS" || stream == "BIO") {
-		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
-		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("chemistry");
-	}
+	let subject1_zscore_view,
+		subject2_zscore_view,
+		subject3_zscore_view,
+		subject_group_id: string;
 
 	if (stream == "MATHS") {
+		subject_group_id = stream;
 		subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT("maths");
+		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
+		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("chemistry");
 	} else if (stream == "BIO") {
+		subject_group_id = stream;
 		subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT("bio");
+		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
+		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("chemistry");
+	} else {
+		console.log("unknown stream: ", stream);
+		process.exit(2);
+	}
+
+	if (subject_group_id == undefined) {
+		throw new Error("subject_group_id is not set");
+	} else if (subject1_zscore_view == undefined) {
+		throw new Error("subject1_zscore_view is not set");
+	} else if (subject2_zscore_view == undefined) {
+		throw new Error("subject2_zscore_view is not set");
+	} else if (subject3_zscore_view == undefined) {
+		throw new Error("subject3_zscore_view is not set");
 	}
 
 	return sql.raw(`CREATE VIEW ${view__Z_SCORE_FINAL(stream)} AS
 		SELECT
-			${subject1_zscore_view}.index_no,
-			((${subject1_zscore_view}.zscore + ${subject2_zscore_view}.zscore + ${subject3_zscore_view}.zscore)/3)
-		AS zscore
+			student.index_no,
+			(
+				(
+					subject1_zscore.zscore +
+					subject2_zscore.zscore +
+					subject3_zscore.zscore
+				) / 3
+			) AS zscore
 		FROM
-			${subject1_zscore_view}
-		JOIN ${subject2_zscore_view}
-			ON ${subject2_zscore_view}.index_no = ${subject1_zscore_view}.index_no
-		JOIN ${subject3_zscore_view}
-			ON ${subject3_zscore_view}.index_no = ${subject1_zscore_view}.index_no`);
+			${table__STUDENTS} AS student
+		JOIN ${subject1_zscore_view} AS subject1_zscore
+			ON subject1_zscore.index_no = student.index_no
+		JOIN ${subject2_zscore_view} AS subject2_zscore
+			ON subject2_zscore.index_no = student.index_no
+		JOIN ${subject3_zscore_view} AS subject3_zscore
+			ON subject3_zscore.index_no = student.index_no
+		WHERE student.subject_group_id='${subject_group_id}'
+		`);
 }
 
 export function rankForStream(stream: Stream) {
