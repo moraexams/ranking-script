@@ -13,6 +13,7 @@ import {
 	dropViewIfExists,
 	finalizeZScoreForStream,
 	rankForStream,
+	runStatements,
 	separateSubjectMarksIntoView,
 	writeOutput,
 } from "./helpers";
@@ -40,16 +41,8 @@ async function dropAllViews() {
 		dropViewIfExists(view__STREAM_RANKING("BIO")),
 	];
 	const DROP_ALL_MESSAGE = `drop all (${statements.length}) views`;
-
-	console.time(DROP_ALL_MESSAGE);
-	const batchResponse = await db.batch(
-		// @ts-expect-error
-		statements.map((statement) => {
-			return db.run(statement);
-		})
-	);
+	const batchResponse = await runStatements(statements, DROP_ALL_MESSAGE);
 	totalStatementsRan += statements.length;
-	console.timeEnd(DROP_ALL_MESSAGE);
 	return batchResponse;
 }
 
@@ -99,16 +92,9 @@ const statements = [
 	console.log(`trying to run ${statements.length} statements...`);
 
 	const statementsRanMessage = `ran ${statements.length} statements`;
-
-	console.time(statementsRanMessage);
-	const batchResponse = await db.batch(
-		// @ts-expect-error
-		statements.map((statement) => {
-			return db.run(statement);
-		})
-	);
+	const batchResponse = await runStatements(statements, statementsRanMessage);
 	totalStatementsRan += statements.length;
-	console.timeEnd(statementsRanMessage);
+
 	writeOutput(batchResponse);
 	console.log(`Ran ${totalStatementsRan} statements`);
 })();

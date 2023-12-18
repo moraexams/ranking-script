@@ -11,6 +11,7 @@ import {
 	view__FINAL_MARKS,
 } from "./constants";
 import { Subject, Stream } from "./types";
+import { db } from "./db";
 
 export function dropViewIfExists(name: string) {
 	return sql.raw(`DROP VIEW IF EXISTS ${name}`);
@@ -191,4 +192,25 @@ export function writeOutput(json: unknown) {
 
 function assertNever(subject: never): never {
 	throw new Error(`${subject} is expected to be type:never`);
+}
+
+export async function runStatements(
+	statements: Array<unknown>,
+	message?: string
+) {
+	if (message) {
+		console.time(message);
+	}
+	const batchResponse = await db.batch(
+		// @ts-expect-error
+		statements.map((statement) => {
+			// @ts-expect-error
+			return db.run(statement);
+		})
+	);
+	if (message) {
+		console.timeEnd(message);
+	}
+
+	return batchResponse;
 }
