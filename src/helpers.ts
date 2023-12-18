@@ -148,12 +148,12 @@ export function rankForStream(stream: Stream) {
 			ORDER BY t.zscore DESC
 		) island_rank,
 		RANK() OVER (
-			PARTITION BY ${table__STUDENTS}.district_id_ranking
+			PARTITION BY student.district_id_ranking
 			ORDER BY t.zscore DESC
 		) district_rank
-	FROM ${view__Z_SCORE_FINAL(stream)} as t
-	JOIN ${table__STUDENTS}
-	ON ${table__STUDENTS}.index_no = t.index_no
+	FROM ${table__STUDENTS} as student
+	JOIN ${view__Z_SCORE_FINAL(stream)} as t
+	ON student.index_no = t.index_no
 	`);
 }
 
