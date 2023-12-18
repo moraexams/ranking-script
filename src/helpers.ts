@@ -16,6 +16,8 @@ export function dropViewIfExists(name: string) {
 	return sql.raw(`DROP VIEW IF EXISTS ${name}`);
 }
 
+// Absent ==> NULL
+
 export function calculateFinalMarksForAll() {
 	return sql.raw(`CREATE VIEW ${view__FINAL_MARKS} AS
 	SELECT

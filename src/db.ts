@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
+import type { Config } from "@libsql/client";
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const applicants = sqliteTable("tbl_students", {
@@ -38,14 +39,16 @@ if (IS_LOCAL) {
 		process.exit(1);
 	}
 }
-
+/**
+ * @type {Config}
+ */
 const options = {
 	url: IS_LOCAL
 		? `file:${process.env.LOCAL_DB_FILE}`
 		: process.env.PUBLIC_TURSO_DATABASE_URL,
 	authToken: process.env.PUBLIC_TURSO_DATABASE_AUTH_TOKEN,
 };
-console.log(options);
+console.log(`Using the database at ${options.url}`);
 
 // @ts-expect-error
 export const client = createClient(options);
