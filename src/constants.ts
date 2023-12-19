@@ -17,6 +17,7 @@ export function view__STREAM_RANKING(stream: Stream) {
 }
 
 export const table__STUDENTS = "tbl_students";
+export const table__MARKS = "tbl_marks";
 
 function sumAll(arr: Array<number>) {
 	return arr.reduce((accumulated, currentValue) => accumulated + currentValue);

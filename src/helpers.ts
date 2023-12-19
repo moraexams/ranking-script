@@ -10,6 +10,7 @@ import {
 	table__STUDENTS,
 	view__FINAL_MARKS,
 	SUBJECT_RESULTS_DISTRICTION_PERCENTILES,
+	table__MARKS,
 } from "./constants";
 import { Subject, Stream } from "./types";
 import { db } from "./db";
@@ -22,21 +23,35 @@ export function dropViewIfExists(name: string) {
 
 export function calculateFinalMarksForAll() {
 	return sql.raw(`CREATE VIEW ${view__FINAL_MARKS} AS
+		SELECT
+			students.index_no,
+			NULL AS subject1_total,
+			NULL AS subject2_total,
+			NULL AS subject3_total
+		FROM ${table__STUDENTS} AS students
+		EXCEPT
+		SELECT
+			students.index_no,
+			NULL AS subject1_total,
+			NULL AS subject2_total,
+			NULL AS subject3_total
+		FROM ${table__MARKS} AS students
+		UNION
 	SELECT
-		tbl_marks.index_no,
+		marks.index_no,
 		CASE 
-			WHEN tbl_marks.subject1_part1 IS NULL AND tbl_marks.subject1_part2 IS NULL THEN NULL
-			ELSE (COALESCE(tbl_marks.subject1_part1, 0) + COALESCE(tbl_marks.subject1_part2, 0))/2
+			WHEN marks.subject1_part1 IS NULL AND marks.subject1_part2 IS NULL THEN NULL
+			ELSE (COALESCE(marks.subject1_part1, 0) + COALESCE(marks.subject1_part2, 0))/2
 		END AS subject1_total,
 		CASE 
-			WHEN tbl_marks.subject2_part1 IS NULL AND tbl_marks.subject2_part2 IS NULL THEN NULL
-			ELSE (COALESCE(tbl_marks.subject2_part1, 0) + COALESCE(tbl_marks.subject2_part2, 0))/2
+			WHEN marks.subject2_part1 IS NULL AND marks.subject2_part2 IS NULL THEN NULL
+			ELSE (COALESCE(marks.subject2_part1, 0) + COALESCE(marks.subject2_part2, 0))/2
 		END AS subject2_total,
 		CASE 
-			WHEN tbl_marks.subject3_part1 IS NULL AND tbl_marks.subject3_part2 IS NULL THEN NULL
-			ELSE (COALESCE(tbl_marks.subject3_part1, 0) + COALESCE(tbl_marks.subject3_part2, 0))/2
+			WHEN marks.subject3_part1 IS NULL AND marks.subject3_part2 IS NULL THEN NULL
+			ELSE (COALESCE(marks.subject3_part1, 0) + COALESCE(marks.subject3_part2, 0))/2
 		END AS subject3_total
-	FROM tbl_marks
+	FROM ${table__MARKS} AS marks
 	`);
 }
 
