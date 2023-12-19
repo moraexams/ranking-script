@@ -1,6 +1,7 @@
 import { Subject, Stream, ResultValue } from "./types";
 
 export const view__FINAL_MARKS = "final_marks";
+export const view__FINAL_RESULTS = "final_results";
 
 export function view__SUBJECT_FINAL_MARKS(subject: Subject) {
 	return `final_marks_${subject}`;
@@ -38,21 +39,19 @@ function sumAll(arr: Array<number>) {
 	return arr.reduce((accumulated, currentValue) => accumulated + currentValue);
 }
 
-function calculatePercentileForW(
+function calculateMinimumPercentiles(
 	percentilesObj: Record<Subject, Record<Exclude<ResultValue, "W">, number>>
 ): Record<Subject, Record<ResultValue, number>> {
 	const outputEntries = Object.entries(percentilesObj).map(
 		([subject, value]) => {
-			let sumOfPercentiles = sumAll(Object.values(value));
-			if (sumOfPercentiles > 100) {
-				throw new Error(
-					`sumOfPercentiles for ${subject} has exceed 100 (${sumOfPercentiles})`
-				);
-			}
-			return [subject, { ...value, W: 100 - sumOfPercentiles }] as [
-				Subject,
-				Record<ResultValue, number>
-			];
+			const valueB = value.A + value.B;
+			const valueC = valueB + value.C;
+			const valueS = valueC + value.S;
+
+			return [
+				subject,
+				{ A: value.A, B: valueB, C: valueC, S: valueS, W: 100 },
+			] as [Subject, Record<ResultValue, number>];
 		}
 	);
 
@@ -64,6 +63,39 @@ function calculatePercentileForW(
  * Defines maximum percentiles for each result (A, B, C, S, W)
  * with respect to each subject
  */
+export const SUBJECT_RESULTS_DISTRICTION_PERCENTILES =
+	calculateMinimumPercentiles({
+		bio: {
+			A: 5.5,
+			B: 10,
+			C: 22,
+			S: 32,
+		},
+		chemistry: {
+			A: 5.5,
+			B: 10,
+			C: 22,
+			S: 32,
+		},
+		maths: {
+			A: 5.5,
+			B: 10,
+			C: 22,
+			S: 32,
+		},
+		physics: {
+			A: 5.5,
+			B: 10,
+			C: 22,
+			S: 32,
+		},
+		ict: {
+			A: 5.5,
+			B: 10,
+			C: 22,
+			S: 32,
+		},
+	});
 
 export const STREAMS_AND_SUBJECTS: Record<
 	Stream,
