@@ -9,6 +9,7 @@ import {
 	view__STREAM_RANKING,
 	table__STUDENTS,
 	view__FINAL_MARKS,
+	SUBJECT_RESULTS_DISTRICTION_PERCENTILES,
 } from "./constants";
 import { Subject, Stream } from "./types";
 import { db } from "./db";
@@ -93,17 +94,28 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 }
 
 export function calculateZScoreForSubject(subject: Subject) {
+	const resultMaximumPercentiles =
+		SUBJECT_RESULTS_DISTRICTION_PERCENTILES[subject];
+
 	return sql.raw(`
 		CREATE VIEW ${view__Z_SCORE_FOR_SUBJECT(subject)} AS
 		WITH Percentile AS (
         SELECT
             index_no,
             NTILE(100) OVER (
-							ORDER BY total DESC
+							ORDER BY total
 						) AS percentile_value
         FROM
             ${view__SUBJECT_FINAL_MARKS(subject)}
-				WHERE total IS NOT NULL
+				WHERE
+						total IS NOT NULL
+				UNION
+				SELECT
+            index_no,
+						NULL AS percentile_value
+        FROM
+            ${view__SUBJECT_FINAL_MARKS(subject)}
+				WHERE total IS NULL
 		)
 		SELECT
 				t.index_no,
@@ -112,11 +124,12 @@ export function calculateZScoreForSubject(subject: Subject) {
 				) as zscore,
 				t.index_no,
 				CASE
-					WHEN p.percentile_value <= 40 THEN "W"
-					WHEN p.percentile_value <= 55 THEN "S"
-					WHEN p.percentile_value <= 65 THEN "C"
-					WHEN p.percentile_value <= 75 THEN "B"
-					ELSE "A"
+					WHEN p.percentile_value <= ${resultMaximumPercentiles["A"]} THEN "A"
+					WHEN p.percentile_value <= ${resultMaximumPercentiles["B"]} THEN "B"
+					WHEN p.percentile_value <= ${resultMaximumPercentiles["C"]} THEN "C"
+					WHEN p.percentile_value <= ${resultMaximumPercentiles["S"]} THEN "S"
+					WHEN p.percentile_value <= ${resultMaximumPercentiles["W"]} THEN "W"
+					ELSE "AB"
 				END AS result,
 				p.percentile_value
 		FROM

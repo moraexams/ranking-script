@@ -1,4 +1,4 @@
-import { Subject, Stream } from "./types";
+import { Subject, Stream, ResultValue } from "./types";
 
 export const view__FINAL_MARKS = "final_marks";
 
@@ -17,3 +17,66 @@ export function view__STREAM_RANKING(stream: Stream) {
 }
 
 export const table__STUDENTS = "tbl_students";
+
+function sumAll(arr: Array<number>) {
+	return arr.reduce((accumulated, currentValue) => accumulated + currentValue);
+}
+
+function calculatePercentileForW(
+	percentilesObj: Record<Subject, Record<Exclude<ResultValue, "W">, number>>
+): Record<Subject, Record<ResultValue, number>> {
+	const outputEntries = Object.entries(percentilesObj).map(
+		([subject, value]) => {
+			let sumOfPercentiles = sumAll(Object.values(value));
+			if (sumOfPercentiles > 100) {
+				throw new Error(
+					`sumOfPercentiles for ${subject} has exceed 100 (${sumOfPercentiles})`
+				);
+			}
+			return [subject, { ...value, W: 100 - sumOfPercentiles }] as [
+				Subject,
+				Record<ResultValue, number>
+			];
+		}
+	);
+
+	// @ts-expect-error
+	return Object.fromEntries(outputEntries);
+}
+
+/**
+ * Defines maximum percentiles for each result (A, B, C, S, W)
+ * with respect to each subject
+ */
+export const SUBJECT_RESULTS_DISTRICTION_PERCENTILES = calculatePercentileForW({
+	bio: {
+		A: 5.5,
+		B: 10,
+		C: 22,
+		S: 32,
+	},
+	chemistry: {
+		A: 5.5,
+		B: 10,
+		C: 22,
+		S: 32,
+	},
+	maths: {
+		A: 5.5,
+		B: 10,
+		C: 22,
+		S: 32,
+	},
+	physics: {
+		A: 5.5,
+		B: 10,
+		C: 22,
+		S: 32,
+	},
+	ict: {
+		A: 5.5,
+		B: 10,
+		C: 22,
+		S: 32,
+	},
+});
