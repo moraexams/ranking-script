@@ -10,14 +10,19 @@ import {
 	table__STUDENTS,
 	view__FINAL_MARKS,
 	SUBJECT_RESULTS_DISTRICTION_PERCENTILES,
+	view__FINAL_RESULTS,
 	table__MARKS,
 	STREAMS_AND_SUBJECTS,
+	table__FINAL_RESULTS,
 } from "./constants";
 import { Subject, Stream } from "./types";
 import { db } from "./db";
 
 export function dropViewIfExists(name: string) {
 	return sql.raw(`DROP VIEW IF EXISTS '${name}'`);
+}
+export function dropTableIfExists(name: string) {
+	return sql.raw(`DROP TABLE IF EXISTS '${name}'`);
 }
 
 // Absent ==> NULL
@@ -162,6 +167,23 @@ export function calculateZScoreForSubject(subject: Subject) {
 	// FROM final_marks_${subject} AS t`);
 }
 
+function formatSubject(subject: Subject) {
+	switch (subject) {
+		case "bio":
+			return "Biology";
+		case "chemistry":
+			return "Chemistry";
+		case "ict":
+			return "ICT";
+		case "maths":
+			return "Combined Mathematics";
+		case "physics":
+			return "Physics";
+		default:
+			return subject;
+	}
+}
+
 export function finalizeZScoreForStream(stream: Stream) {
 	let subject1 = STREAMS_AND_SUBJECTS[stream].subject1,
 		subject2 = STREAMS_AND_SUBJECTS[stream].subject2,
@@ -295,6 +317,22 @@ export function finalizeZScoreForStream(stream: Stream) {
 }
 
 export function rankForStream(stream: Stream) {
+	if (
+		stream == "Agri (BIO)" ||
+		stream == "BIO_CHEMISTRY_ICT" ||
+		stream == "BIO_PHYSICS_ICT" ||
+		stream == "ICT ONLY"
+	) {
+		return sql.raw(`CREATE VIEW '${view__STREAM_RANKING(stream)}' AS
+			SELECT
+				t.index_no,
+				"-" AS island_rank,
+				"-" AS district_rank
+			FROM ${table__STUDENTS} as student
+			JOIN ${view__Z_SCORE_FINAL(stream)} as t
+			ON student.index_no = t.index_no
+		`);
+	}
 	return sql.raw(`CREATE VIEW '${view__STREAM_RANKING(stream)}' AS
 	SELECT
 		t.index_no,
@@ -318,6 +356,40 @@ export function rankForStream(stream: Stream) {
 	JOIN ${view__Z_SCORE_FINAL(stream)} as t
 	ON student.index_no = t.index_no
 	WHERE t.zscore IS NOT NULL
+	`);
+}
+
+function $finalizeStreamResults(stream: Stream) {
+	const x = `SELECT
+		students.subject_group_id,
+		stream_final.*,
+		ranking.island_rank,
+		ranking.district_rank
+	FROM ${view__Z_SCORE_FINAL(stream)} AS stream_final
+	JOIN ${view__STREAM_RANKING(stream)} AS ranking
+	ON ranking.index_no = stream_final.index_no
+	JOIN ${table__STUDENTS} AS students
+	ON students.index_no = stream_final.index_no
+	`;
+	console.log(x);
+	return x;
+}
+
+export function finalizeResults() {
+	return sql.raw(`CREATE TABLE '${table__FINAL_RESULTS}' AS
+		${$finalizeStreamResults("Agri (BIO)")}
+		UNION
+		${$finalizeStreamResults("BIO")}
+		UNION
+		${$finalizeStreamResults("BIO_CHEMISTRY_ICT")}
+		UNION
+		${$finalizeStreamResults("BIO_PHYSICS_ICT")}
+		UNION
+		${$finalizeStreamResults("ICT (MATHS)")}
+		UNION
+		${$finalizeStreamResults("ICT ONLY")}
+		UNION
+${$finalizeStreamResults("MATHS")}
 	`);
 }
 

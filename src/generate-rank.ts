@@ -6,11 +6,15 @@ import {
 	view__Z_SCORE_FINAL,
 	view__FINAL_MARKS,
 	view__STREAM_RANKING,
+	view__FINAL_RESULTS,
+	table__FINAL_RESULTS,
 } from "./constants";
 import {
 	calculateFinalMarksForAll,
 	calculateZScoreForSubject,
+	dropTableIfExists,
 	dropViewIfExists,
+	finalizeResults,
 	finalizeZScoreForStream,
 	rankForStream,
 	runStatements,
@@ -45,6 +49,12 @@ async function dropAllViews() {
 		dropViewIfExists(view__STREAM_RANKING("MATHS")),
 		dropViewIfExists(view__STREAM_RANKING("BIO")),
 		dropViewIfExists(view__STREAM_RANKING("ICT (MATHS)")),
+		dropViewIfExists(view__STREAM_RANKING("Agri (BIO)")),
+		dropViewIfExists(view__STREAM_RANKING("BIO_CHEMISTRY_ICT")),
+		dropViewIfExists(view__STREAM_RANKING("BIO_PHYSICS_ICT")),
+		dropViewIfExists(view__STREAM_RANKING("ICT ONLY")),
+		dropViewIfExists(view__FINAL_RESULTS),
+		dropTableIfExists(table__FINAL_RESULTS),
 	];
 	const DROP_ALL_MESSAGE = `drop all (${statements.length}) views`;
 	const batchResponse = await runStatements(statements, DROP_ALL_MESSAGE);
@@ -80,6 +90,11 @@ const statements = [
 	rankForStream("MATHS"),
 	rankForStream("BIO"),
 	rankForStream("ICT (MATHS)"),
+	rankForStream("Agri (BIO)"),
+	rankForStream("BIO_CHEMISTRY_ICT"),
+	rankForStream("BIO_PHYSICS_ICT"),
+	rankForStream("ICT ONLY"),
+	finalizeResults(),
 	// output ranks and z-score for comparing
 	// sql.raw(
 	// 	`SELECT

@@ -1,7 +1,8 @@
 import { Subject, Stream, ResultValue } from "./types";
 
 export const view__FINAL_MARKS = "final_marks";
-export const view__FINAL_RESULTS = "final_results";
+export const view__FINAL_RESULTS = "view_final_results";
+export const table__FINAL_RESULTS = "table_final_results";
 
 export function view__SUBJECT_FINAL_MARKS(subject: Subject) {
 	return `final_marks_${subject}`;
@@ -15,21 +16,20 @@ function _stream(stream: Stream) {
 	let s = "";
 	for (let i = 0; i < stream.length; i++) {
 		let char = stream.charAt(i);
-		console.log(char);
 		if (char == " " || char == "(" || char == ")") {
 			s += "_";
 		} else {
-			s += char;
+			s += char.toLowerCase();
 		}
 	}
-	console.log(s);
+	console.log("_stream", s);
 	return s;
 }
 export function view__Z_SCORE_FINAL(stream: Stream) {
-	return `zscore_final_${_stream(stream).toLowerCase()}`;
+	return `zscore_final_${_stream(stream)}`;
 }
 export function view__STREAM_RANKING(stream: Stream) {
-	return `stream_ranking_${stream.toLowerCase()}`;
+	return `stream_ranking_${_stream(stream)}`;
 }
 
 export const table__STUDENTS = "tbl_students";
