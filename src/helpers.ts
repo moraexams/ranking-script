@@ -192,6 +192,15 @@ export function rankForStream(stream: Stream) {
 	return sql.raw(`CREATE VIEW ${view__STREAM_RANKING(stream)} AS
 	SELECT
 		t.index_no,
+		"-" AS island_rank,
+		"-" AS district_rank
+	FROM ${table__STUDENTS} as student
+	JOIN ${view__Z_SCORE_FINAL(stream)} as t
+	ON student.index_no = t.index_no
+	WHERE t.zscore IS NULL
+	UNION
+	SELECT
+		t.index_no,
 		RANK() OVER (
 			ORDER BY t.zscore DESC
 		) island_rank,
@@ -202,6 +211,7 @@ export function rankForStream(stream: Stream) {
 	FROM ${table__STUDENTS} as student
 	JOIN ${view__Z_SCORE_FINAL(stream)} as t
 	ON student.index_no = t.index_no
+	WHERE t.zscore IS NOT NULL
 	`);
 }
 
