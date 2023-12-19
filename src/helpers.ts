@@ -151,6 +151,11 @@ export function finalizeZScoreForStream(stream: Stream) {
 		subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT("bio");
 		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
 		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("chemistry");
+	} else if (stream == "MATHS_ICT") {
+		subject_group_id = "ICT (MATHS)";
+		subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT("maths");
+		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
+		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("ict");
 	} else {
 		console.log("unknown stream: ", stream);
 		process.exit(2);

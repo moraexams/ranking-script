@@ -37,8 +37,10 @@ async function dropAllViews() {
 		dropViewIfExists(view__Z_SCORE_FOR_SUBJECT("ict")),
 		dropViewIfExists(view__Z_SCORE_FINAL("MATHS")),
 		dropViewIfExists(view__Z_SCORE_FINAL("BIO")),
+		dropViewIfExists(view__Z_SCORE_FINAL("MATHS_ICT")),
 		dropViewIfExists(view__STREAM_RANKING("MATHS")),
 		dropViewIfExists(view__STREAM_RANKING("BIO")),
+		dropViewIfExists(view__STREAM_RANKING("MATHS_ICT")),
 	];
 	const DROP_ALL_MESSAGE = `drop all (${statements.length}) views`;
 	const batchResponse = await runStatements(statements, DROP_ALL_MESSAGE);
@@ -65,9 +67,11 @@ const statements = [
 	// finalize z-score for each stream
 	finalizeZScoreForStream("MATHS"),
 	finalizeZScoreForStream("BIO"),
+	finalizeZScoreForStream("MATHS_ICT"),
 	// generate ranks for each stream
 	rankForStream("MATHS"),
 	rankForStream("BIO"),
+	rankForStream("MATHS_ICT"),
 	// output ranks and z-score for comparing
 	// sql.raw(
 	// 	`SELECT
