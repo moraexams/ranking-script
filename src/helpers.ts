@@ -95,17 +95,38 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 export function calculateZScoreForSubject(subject: Subject) {
 	return sql.raw(`
 		CREATE VIEW ${view__Z_SCORE_FOR_SUBJECT(subject)} AS
+		WITH Percentile AS (
+        SELECT
+            index_no,
+            NTILE(100) OVER (
+							ORDER BY total DESC
+						) AS percentile_value
+        FROM
+            ${view__SUBJECT_FINAL_MARKS(subject)}
+				WHERE total IS NOT NULL
+		)
 		SELECT
 				t.index_no,
 				(
 					(t.total - avg_total.avg_total) / avg_total.stdev_total
-				) as zscore
+				) as zscore,
+				t.index_no,
+				CASE
+					WHEN p.percentile_value <= 40 THEN "W"
+					WHEN p.percentile_value <= 55 THEN "S"
+					WHEN p.percentile_value <= 65 THEN "C"
+					WHEN p.percentile_value <= 75 THEN "B"
+					ELSE "A"
+				END AS result,
+				p.percentile_value
 		FROM
 				${view__SUBJECT_FINAL_MARKS(subject)} AS t
 		JOIN
 				(SELECT AVG(total) AS avg_total, 
 								SQRT(AVG(total * total) - AVG(total) * AVG(total)) AS stdev_total
 				FROM ${view__SUBJECT_FINAL_MARKS(subject)}) AS avg_total ON 1=1
+		JOIN Percentile as p
+		ON t.index_no = p.index_no
 		`);
 	// return sql.raw(`CREATE VIEW ${view__zScoreForSubject(subject)} AS
 	// SELECT
