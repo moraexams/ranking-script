@@ -37,10 +37,14 @@ async function dropAllViews() {
 		dropViewIfExists(view__Z_SCORE_FOR_SUBJECT("ict")),
 		dropViewIfExists(view__Z_SCORE_FINAL("MATHS")),
 		dropViewIfExists(view__Z_SCORE_FINAL("BIO")),
-		dropViewIfExists(view__Z_SCORE_FINAL("MATHS_ICT")),
+		dropViewIfExists(view__Z_SCORE_FINAL("ICT (MATHS)")),
+		dropViewIfExists(view__Z_SCORE_FINAL("Agri (BIO)")),
+		dropViewIfExists(view__Z_SCORE_FINAL("BIO_CHEMISTRY_ICT")),
+		dropViewIfExists(view__Z_SCORE_FINAL("BIO_PHYSICS_ICT")),
+		dropViewIfExists(view__Z_SCORE_FINAL("ICT ONLY")),
 		dropViewIfExists(view__STREAM_RANKING("MATHS")),
 		dropViewIfExists(view__STREAM_RANKING("BIO")),
-		dropViewIfExists(view__STREAM_RANKING("MATHS_ICT")),
+		dropViewIfExists(view__STREAM_RANKING("ICT (MATHS)")),
 	];
 	const DROP_ALL_MESSAGE = `drop all (${statements.length}) views`;
 	const batchResponse = await runStatements(statements, DROP_ALL_MESSAGE);
@@ -67,11 +71,15 @@ const statements = [
 	// finalize z-score for each stream
 	finalizeZScoreForStream("MATHS"),
 	finalizeZScoreForStream("BIO"),
-	finalizeZScoreForStream("MATHS_ICT"),
+	finalizeZScoreForStream("ICT (MATHS)"),
+	finalizeZScoreForStream("Agri (BIO)"),
+	finalizeZScoreForStream("BIO_CHEMISTRY_ICT"),
+	finalizeZScoreForStream("BIO_PHYSICS_ICT"),
+	finalizeZScoreForStream("ICT ONLY"),
 	// generate ranks for each stream
 	rankForStream("MATHS"),
 	rankForStream("BIO"),
-	rankForStream("MATHS_ICT"),
+	rankForStream("ICT (MATHS)"),
 	// output ranks and z-score for comparing
 	// sql.raw(
 	// 	`SELECT

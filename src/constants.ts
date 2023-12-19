@@ -9,8 +9,23 @@ export function view__SUBJECT_FINAL_MARKS(subject: Subject) {
 export function view__Z_SCORE_FOR_SUBJECT(subject: Subject) {
 	return `zscore_${subject}`;
 }
+
+function _stream(stream: Stream) {
+	let s = "";
+	for (let i = 0; i < stream.length; i++) {
+		let char = stream.charAt(i);
+		console.log(char);
+		if (char == " " || char == "(" || char == ")") {
+			s += "_";
+		} else {
+			s += char;
+		}
+	}
+	console.log(s);
+	return s;
+}
 export function view__Z_SCORE_FINAL(stream: Stream) {
-	return `zscore_final_${stream.toLowerCase()}`;
+	return `zscore_final_${_stream(stream).toLowerCase()}`;
 }
 export function view__STREAM_RANKING(stream: Stream) {
 	return `stream_ranking_${stream.toLowerCase()}`;
@@ -49,35 +64,40 @@ function calculatePercentileForW(
  * Defines maximum percentiles for each result (A, B, C, S, W)
  * with respect to each subject
  */
-export const SUBJECT_RESULTS_DISTRICTION_PERCENTILES = calculatePercentileForW({
-	bio: {
-		A: 5.5,
-		B: 10,
-		C: 22,
-		S: 32,
+
+export const STREAMS_AND_SUBJECTS: Record<
+	Stream,
+	{ subject1?: Subject; subject2?: Subject; subject3?: Subject }
+> = {
+	BIO: {
+		subject1: "bio",
+		subject2: "physics",
+		subject3: "chemistry",
 	},
-	chemistry: {
-		A: 5.5,
-		B: 10,
-		C: 22,
-		S: 32,
+	MATHS: {
+		subject1: "maths",
+		subject2: "physics",
+		subject3: "chemistry",
 	},
-	maths: {
-		A: 5.5,
-		B: 10,
-		C: 22,
-		S: 32,
+	"ICT (MATHS)": {
+		subject1: "maths",
+		subject2: "physics",
+		subject3: "ict",
 	},
-	physics: {
-		A: 5.5,
-		B: 10,
-		C: 22,
-		S: 32,
+	"Agri (BIO)": {
+		subject1: "bio",
+		subject3: "chemistry",
 	},
-	ict: {
-		A: 5.5,
-		B: 10,
-		C: 22,
-		S: 32,
+	"ICT ONLY": {
+		subject3: "ict",
 	},
-});
+	BIO_PHYSICS_ICT: {
+		subject1: "bio",
+		subject2: "physics",
+		subject3: "ict",
+	},
+	BIO_CHEMISTRY_ICT: {
+		subject1: "bio",
+		subject3: "chemistry",
+	},
+};

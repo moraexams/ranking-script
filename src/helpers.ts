@@ -11,12 +11,13 @@ import {
 	view__FINAL_MARKS,
 	SUBJECT_RESULTS_DISTRICTION_PERCENTILES,
 	table__MARKS,
+	STREAMS_AND_SUBJECTS,
 } from "./constants";
 import { Subject, Stream } from "./types";
 import { db } from "./db";
 
 export function dropViewIfExists(name: string) {
-	return sql.raw(`DROP VIEW IF EXISTS ${name}`);
+	return sql.raw(`DROP VIEW IF EXISTS '${name}'`);
 }
 
 // Absent ==> NULL
@@ -73,18 +74,17 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 	let whereCondition: string;
 	if (subject == "bio") {
 		whereCondition =
-			"students.subject_group_id = 'BIO' OR students.subject_group_id = 'Agri (BIO)'";
+			"students.subject_group_id IN ('BIO', 'Agri (BIO)', 'BIO_CHEMISTRY_ICT', 'BIO_PHYSICS_ICT')";
 	} else if (subject == "maths") {
-		whereCondition =
-			"students.subject_group_id = 'MATHS' OR students.subject_group_id = 'ICT (MATHS)'";
+		whereCondition = "students.subject_group_id IN ('MATHS', 'ICT (MATHS)')";
 	} else if (subject == "physics") {
 		whereCondition =
-			"students.subject_group_id = 'MATHS' OR students.subject_group_id = 'BIO' OR students.subject_group_id = 'ICT (MATHS)'";
+			"students.subject_group_id IN ('MATHS', 'BIO', 'ICT (MATHS)', 'BIO_PHYSICS_ICT')";
 	} else if (subject == "chemistry") {
 		whereCondition =
-			"students.subject_group_id = 'MATHS' OR students.subject_group_id = 'BIO' OR students.subject_group_id = 'Agri (BIO)'";
+			"students.subject_group_id IN ('MATHS', 'BIO', 'Agri (BIO)', 'BIO_CHEMISTRY_ICT')";
 	} else if (subject == "ict") {
-		whereCondition = `students.subject_group_id = 'ICT (MATHS)' OR students.subject_group_id = 'Other'`;
+		whereCondition = `students.subject_group_id IN ('ICT (MATHS)', 'Other', 'ICT ONLY')`;
 	} else {
 		assertNever(subject);
 	}
@@ -118,7 +118,7 @@ export function calculateZScoreForSubject(subject: Subject) {
         SELECT
             index_no,
             NTILE(100) OVER (
-							ORDER BY total
+							ORDER BY total DESC
 						) AS percentile_value
         FROM
             ${view__SUBJECT_FINAL_MARKS(subject)}
@@ -145,8 +145,7 @@ export function calculateZScoreForSubject(subject: Subject) {
 					WHEN p.percentile_value <= ${resultMaximumPercentiles["S"]} THEN "S"
 					WHEN p.percentile_value <= ${resultMaximumPercentiles["W"]} THEN "W"
 					ELSE "AB"
-				END AS result,
-				p.percentile_value
+				END AS result
 		FROM
 				${view__SUBJECT_FINAL_MARKS(subject)} AS t
 		JOIN
@@ -164,40 +163,108 @@ export function calculateZScoreForSubject(subject: Subject) {
 }
 
 export function finalizeZScoreForStream(stream: Stream) {
-	let subject1_zscore_view,
-		subject2_zscore_view,
-		subject3_zscore_view,
-		subject_group_id: string;
+	let subject1 = STREAMS_AND_SUBJECTS[stream].subject1,
+		subject2 = STREAMS_AND_SUBJECTS[stream].subject2,
+		subject3 = STREAMS_AND_SUBJECTS[stream].subject3;
 
-	if (stream == "MATHS") {
-		subject_group_id = stream;
-		subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT("maths");
-		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
-		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("chemistry");
-	} else if (stream == "BIO") {
-		subject_group_id = stream;
-		subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT("bio");
-		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
-		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("chemistry");
-	} else if (stream == "MATHS_ICT") {
-		subject_group_id = "ICT (MATHS)";
-		subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT("maths");
-		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT("physics");
-		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT("ict");
-	} else {
-		console.log("unknown stream: ", stream);
-		process.exit(2);
+	if (stream == "ICT ONLY" && subject3 != undefined) {
+		if (subject3 == undefined) {
+			throw new Error(`subject3 is undefined (stream=${stream})`);
+		}
+		return sql.raw(`CREATE VIEW '${view__Z_SCORE_FINAL(stream)}' AS
+		SELECT
+			student.index_no,
+			subject3_zscore.zscore,
+			NULL AS subject1,
+			NULL AS subject1_result,
+			NULL AS subject2,
+			NULL AS subject2_result,
+			'${formatSubject(subject3)}' AS subject3,
+			subject3_zscore.result AS subject3_result
+		FROM
+			${table__STUDENTS} AS student
+		JOIN ${view__Z_SCORE_FOR_SUBJECT("ict")} AS subject3_zscore
+			ON subject3_zscore.index_no = student.index_no
+		WHERE student.subject_group_id='${stream}'
+		`);
 	}
 
-	if (subject_group_id == undefined) {
-		throw new Error("subject_group_id is not set");
-	} else if (subject1_zscore_view == undefined) {
-		throw new Error("subject1_zscore_view is not set");
-	} else if (subject2_zscore_view == undefined) {
-		throw new Error("subject2_zscore_view is not set");
-	} else if (subject3_zscore_view == undefined) {
-		throw new Error("subject3_zscore_view is not set");
+	if (stream == "Agri (BIO)") {
+		if (subject1 == undefined || subject3 == undefined) {
+			throw new Error(
+				`subject1 (${subject1}) or subject3 (${subject3}) is undefined (stream=${stream})`
+			);
+		}
+		return sql.raw(`CREATE VIEW '${view__Z_SCORE_FINAL(stream)}' AS
+		SELECT
+			student.index_no,
+			(
+				(
+					subject1_zscore.zscore +
+					subject3_zscore.zscore
+				) / 2
+			) AS zscore,
+			"${formatSubject(subject1)}" AS subject1,
+			subject1_zscore.result AS subject1_result,
+			NULL AS subject2,
+			NULL AS subject2_result,
+			"${formatSubject(subject3)}" AS subject3,
+			subject3_zscore.result AS subject3_result
+		FROM
+			${table__STUDENTS} AS student
+		JOIN ${view__Z_SCORE_FOR_SUBJECT("bio")} AS subject1_zscore
+			ON subject1_zscore.index_no = student.index_no
+		JOIN ${view__Z_SCORE_FOR_SUBJECT("chemistry")} AS subject3_zscore
+			ON subject3_zscore.index_no = student.index_no
+		WHERE student.subject_group_id='${stream}'
+		`);
 	}
+
+	if (stream == "BIO_CHEMISTRY_ICT") {
+		if (subject1 == undefined || subject3 == undefined) {
+			throw new Error(
+				`subject1 (${subject1}) or subject3 (${subject3}) is undefined (stream=${stream})`
+			);
+		}
+		return sql.raw(`CREATE VIEW ${view__Z_SCORE_FINAL(stream)} AS
+		SELECT
+			student.index_no,
+			(
+				(
+					subject1_zscore.zscore +
+					subject3_zscore.zscore
+				) / 2
+			) AS zscore,
+			"${formatSubject(subject1)}" AS subject1,
+			subject1_zscore.result AS subject1_result,
+			NULL AS subject2,
+			NULL AS subject2_result,
+			"${formatSubject(subject3)}" AS subject3,
+			subject3_zscore.result AS subject3_result
+		FROM
+			${table__STUDENTS} AS student
+		JOIN ${
+			// @ts-expect-error
+			view__Z_SCORE_FOR_SUBJECT(STREAMS_AND_SUBJECTS[stream].subject1)
+		} AS subject1_zscore
+		ON subject1_zscore.index_no = student.index_no
+		JOIN ${
+			// @ts-expect-error
+			view__Z_SCORE_FOR_SUBJECT(STREAMS_AND_SUBJECTS[stream].subject3)
+		} AS subject3_zscore
+			ON subject3_zscore.index_no = student.index_no
+		WHERE student.subject_group_id='${stream}'
+		`);
+	}
+
+	if (subject1 == undefined || subject2 == undefined || subject3 == undefined) {
+		console.log("subject1 or subject2 or subject3 is undefined for", stream);
+		process.exit(3);
+	}
+
+	const subject1_zscore_view = view__Z_SCORE_FOR_SUBJECT(subject1),
+		subject2_zscore_view = view__Z_SCORE_FOR_SUBJECT(subject2),
+		subject3_zscore_view = view__Z_SCORE_FOR_SUBJECT(subject3);
 
 	return sql.raw(`CREATE VIEW ${view__Z_SCORE_FINAL(stream)} AS
 		SELECT
@@ -208,7 +275,13 @@ export function finalizeZScoreForStream(stream: Stream) {
 					subject2_zscore.zscore +
 					subject3_zscore.zscore
 				) / 3
-			) AS zscore
+			) AS zscore,
+			"${formatSubject(subject1)}" AS subject1,
+			subject1_zscore.result AS subject1_result,
+			"${formatSubject(subject2)}" AS subject2,
+			subject2_zscore.result AS subject2_result,
+			"${formatSubject(subject3)}" AS subject3,
+			subject3_zscore.result AS subject3_result
 		FROM
 			${table__STUDENTS} AS student
 		JOIN ${subject1_zscore_view} AS subject1_zscore
@@ -217,12 +290,12 @@ export function finalizeZScoreForStream(stream: Stream) {
 			ON subject2_zscore.index_no = student.index_no
 		JOIN ${subject3_zscore_view} AS subject3_zscore
 			ON subject3_zscore.index_no = student.index_no
-		WHERE student.subject_group_id='${subject_group_id}'
+		WHERE student.subject_group_id='${stream}'
 		`);
 }
 
 export function rankForStream(stream: Stream) {
-	return sql.raw(`CREATE VIEW ${view__STREAM_RANKING(stream)} AS
+	return sql.raw(`CREATE VIEW '${view__STREAM_RANKING(stream)}' AS
 	SELECT
 		t.index_no,
 		"-" AS island_rank,
