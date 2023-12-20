@@ -14,6 +14,7 @@ import {
 	table__MARKS,
 	STREAMS_AND_SUBJECTS,
 	table__FINAL_RESULTS,
+	table_EXAM_DISTRICTS,
 } from "./constants";
 import { Subject, Stream } from "./types";
 import { db } from "./db";
@@ -161,7 +162,6 @@ export function calculateZScoreForSubject(subject: Subject) {
 				(
 					(t.total - avg_total.avg_total) / avg_total.stdev_total
 				) as zscore,
-				t.index_no,
 				CASE
 					WHEN p.percentile_value <= ${resultMaximumPercentiles["A"]} THEN "A"
 					WHEN p.percentile_value <= ${resultMaximumPercentiles["B"]} THEN "B"
@@ -380,15 +380,12 @@ export function rankForStream(stream: Stream) {
 
 function $finalizeStreamResults(stream: Stream) {
 	const x = `SELECT
-		students.subject_group_id,
 		stream_final.*,
 		ranking.island_rank,
 		ranking.district_rank
 	FROM ${view__Z_SCORE_FINAL(stream)} AS stream_final
 	JOIN ${view__STREAM_RANKING(stream)} AS ranking
 	ON ranking.index_no = stream_final.index_no
-	JOIN ${table__STUDENTS} AS students
-	ON students.index_no = stream_final.index_no
 	`;
 	console.log(x);
 	return x;

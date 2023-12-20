@@ -27,14 +27,14 @@ if (IS_LOCAL) {
 	}
 } else {
 	if (
-		process.env.PUBLIC_TURSO_DATABASE_URL == undefined ||
-		process.env.PUBLIC_TURSO_DATABASE_AUTH_TOKEN == undefined
+		process.env.TURSO_DATABASE_URL == undefined ||
+		process.env.TURSO_DATABASE_AUTH_TOKEN == undefined
 	) {
 		console.warn(
 			"Turso-specific environment variables are not defined in process.env."
 		);
 		console.log(
-			"Define env.PUBLIC_TURSO_DATABASE_URL, env.PUBLIC_TURSO_DATABASE_AUTH_TOKEN to resolve this issue."
+			"Define env.TURSO_DATABASE_URL, env.TURSO_DATABASE_AUTH_TOKEN to resolve this issue."
 		);
 		process.exit(1);
 	}
@@ -45,8 +45,8 @@ if (IS_LOCAL) {
 const options = {
 	url: IS_LOCAL
 		? `file:${process.env.LOCAL_DB_FILE}`
-		: process.env.PUBLIC_TURSO_DATABASE_URL,
-	authToken: process.env.PUBLIC_TURSO_DATABASE_AUTH_TOKEN,
+		: process.env.TURSO_DATABASE_URL,
+	authToken: process.env.TURSO_DATABASE_AUTH_TOKEN,
 };
 console.log(`Using the database at ${options.url}`);
 

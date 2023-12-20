@@ -2,7 +2,11 @@ import { Subject, Stream, ResultValue } from "./types";
 
 export const view__FINAL_MARKS = "final_marks";
 export const view__FINAL_RESULTS = "view_final_results";
-export const table__FINAL_RESULTS = "table_final_results";
+export const table__FINAL_RESULTS = "tbl_final_results";
+export const table__STUDENTS = "tbl_students";
+export const table__MARKS = "tbl_marks";
+export const table__EXAM_CENTRES = "tbl_exam_centres";
+export const table_EXAM_DISTRICTS = "tbl_exam_districts";
 
 export function view__SUBJECT_FINAL_MARKS(subject: Subject) {
 	return `final_marks_${subject}`;
@@ -31,11 +35,6 @@ export function view__Z_SCORE_FINAL(stream: Stream) {
 export function view__STREAM_RANKING(stream: Stream) {
 	return `stream_ranking_${_stream(stream)}`;
 }
-
-export const table__STUDENTS = "tbl_students";
-export const table__MARKS = "tbl_marks";
-export const table__EXAM_CENTRES = "tbl_exam_centres";
-export const table_EXAM_DISTRICTS = "tbl_exam_districts";
 
 function calculateMinimumPercentiles(
 	percentilesObj: Record<Subject, Record<Exclude<ResultValue, "W">, number>>

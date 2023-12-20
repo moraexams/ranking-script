@@ -4,6 +4,7 @@ import { runStatements } from "./helpers";
 import {
 	table_EXAM_DISTRICTS,
 	table__EXAM_CENTRES,
+	table__MARKS,
 	table__STUDENTS,
 	view__SUBJECT_FINAL_MARKS,
 } from "./constants";
@@ -64,13 +65,25 @@ function filterStudentsMarksByExamCentreId(
 	part: "part1" | "part2",
 	examCentreId: number
 ) {
+	let subjectNumber: number;
+	if (subject == "bio" || subject == "maths") {
+		subjectNumber = 1;
+	} else if (subject == "physics") {
+		subjectNumber = 2;
+	} else if (subject == "chemistry" || subject == "ict") {
+		subjectNumber = 3;
+	} else {
+		throw new Error("Unknown subject:", subject);
+	}
+
 	return `
 		SELECT
 			DISTINCT
 			students.index_no,
 			subject_marks.${part},
 			exam_centres.centre_name,
-			exam_districts.district
+			exam_districts.district,
+			marks.sub${subjectNumber}_p${PART.replace("part", "")}_datetime AS entered_on
 		FROM ${table__STUDENTS} AS students
 		JOIN ${view__SUBJECT_FINAL_MARKS(subject)} AS subject_marks
 		ON students.index_no = subject_marks.index_no
@@ -78,8 +91,10 @@ function filterStudentsMarksByExamCentreId(
 		ON exam_centres.centre_id = students.centre_id
 		JOIN ${table_EXAM_DISTRICTS} AS exam_districts
 		ON exam_centres.district_id = exam_districts.district_id
+		JOIN ${table__MARKS} AS marks
+		ON marks.index_no = students.index_no
 		WHERE students.centre_id = ${examCentreId}
-		ORDER BY students.index_no
+		ORDER BY marks.sub${subjectNumber}_p${PART.replace("part", "")}_datetime
 	`;
 }
 
@@ -180,7 +195,7 @@ function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 		// @ts-expect-error
 		const sqlResponse = responseItem.response;
 		const csv = convertToCSV(sqlResponse.columns, sqlResponse.rows, {
-			except: ["centre_name", "district"],
+			except: ["centre_name", "district", "entered_on"],
 		});
 		if (sqlResponse.rows.length == 0) {
 			continue;
