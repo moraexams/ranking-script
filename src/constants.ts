@@ -34,10 +34,8 @@ export function view__STREAM_RANKING(stream: Stream) {
 
 export const table__STUDENTS = "tbl_students";
 export const table__MARKS = "tbl_marks";
-
-function sumAll(arr: Array<number>) {
-	return arr.reduce((accumulated, currentValue) => accumulated + currentValue);
-}
+export const table__EXAM_CENTRES = "tbl_exam_centres";
+export const table_EXAM_DISTRICTS = "tbl_exam_districts";
 
 function calculateMinimumPercentiles(
 	percentilesObj: Record<Subject, Record<Exclude<ResultValue, "W">, number>>

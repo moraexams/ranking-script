@@ -10,6 +10,7 @@ export type Stream =
 	| "MATHS";
 
 export type ResultValue = "A" | "B" | "C" | "S" | "W";
+export type ExamPart = "part1" | "part2";
 
 export interface SubjectZScoreCalculationValues {
 	average?: number;

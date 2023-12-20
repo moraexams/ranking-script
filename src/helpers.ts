@@ -33,14 +33,26 @@ export function calculateFinalMarksForAll() {
 			students.index_no,
 			NULL AS subject1_total,
 			NULL AS subject2_total,
-			NULL AS subject3_total
+			NULL AS subject3_total,
+			NULL AS subject1_part1,
+			NULL AS subject1_part2,
+			NULL AS subject2_part1,
+			NULL AS subject2_part2,
+			NULL AS subject3_part1,
+			NULL AS subject3_part2
 		FROM ${table__STUDENTS} AS students
 		EXCEPT
 		SELECT
 			students.index_no,
 			NULL AS subject1_total,
 			NULL AS subject2_total,
-			NULL AS subject3_total
+			NULL AS subject3_total,
+			NULL AS subject1_part1,
+			NULL AS subject1_part2,
+			NULL AS subject2_part1,
+			NULL AS subject2_part2,
+			NULL AS subject3_part1,
+			NULL AS subject3_part2
 		FROM ${table__MARKS} AS students
 		UNION
 	SELECT
@@ -56,7 +68,13 @@ export function calculateFinalMarksForAll() {
 		CASE 
 			WHEN marks.subject3_part1 IS NULL AND marks.subject3_part2 IS NULL THEN NULL
 			ELSE (COALESCE(marks.subject3_part1, 0) + COALESCE(marks.subject3_part2, 0))/2
-		END AS subject3_total
+		END AS subject3_total,
+		marks.subject1_part1,
+		marks.subject1_part2,
+		marks.subject2_part1,
+		marks.subject2_part2,
+		marks.subject3_part1,
+		marks.subject3_part2
 	FROM ${table__MARKS} AS marks
 	`);
 }
@@ -74,7 +92,6 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 		console.log("ERROR: Unknown subject:", subject);
 		process.exit(0);
 	}
-	subjectMarksColumnName += "_total";
 
 	let whereCondition: string;
 	if (subject == "bio") {
@@ -97,7 +114,9 @@ export function separateSubjectMarksIntoView(subject: Subject) {
 	return sql.raw(`CREATE VIEW ${view__SUBJECT_FINAL_MARKS(subject)} AS
 	SELECT
 		students.index_no,
-		final_marks.${subjectMarksColumnName} AS total
+		final_marks.${subjectMarksColumnName}_part1 AS part1,
+		final_marks.${subjectMarksColumnName}_part2 AS part2,
+		final_marks.${subjectMarksColumnName}_total AS total
 	FROM ${view__FINAL_MARKS} AS final_marks
 	JOIN ${table__STUDENTS} AS students
 	ON final_marks.index_no = students.index_no
