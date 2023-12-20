@@ -48,17 +48,25 @@ console.log(
 	].join("\n")
 );
 
-function filterStudentsMarks(
+function filterStudentsMarks(subject: Subject, part: "part1" | "part2") {
+	return `SELECT
+			students.index_no,
+			subject_marks.${part}
+		FROM ${table__STUDENTS} AS students
+		JOIN ${view__SUBJECT_FINAL_MARKS(subject)} AS subject_marks
+		ON students.index_no = subject_marks.index_no
+		WHERE subject_marks.${part} > 0 AND subject_marks.${part} < 100
+		ORDER BY subject_marks.${part} DESC`;
+}
+
+function filterStudentsMarksByExamCentreId(
 	subject: Subject,
-	examCentreId: number,
-	part: "part1" | "part2"
+	part: "part1" | "part2",
+	examCentreId: number
 ) {
-	return {
-		subject,
-		part,
-		examCentreId,
-		sqlQuery: `
+	return `
 		SELECT
+			DISTINCT
 			students.index_no,
 			subject_marks.${part},
 			exam_centres.centre_name,
@@ -71,8 +79,8 @@ function filterStudentsMarks(
 		JOIN ${table_EXAM_DISTRICTS} AS exam_districts
 		ON exam_centres.district_id = exam_districts.district_id
 		WHERE students.centre_id = ${examCentreId}
-	`,
-	};
+		ORDER BY students.index_no
+	`;
 }
 
 function numbersFromTo(from: number, to: number) {
@@ -87,20 +95,51 @@ function numbersFromTo(from: number, to: number) {
 
 const examCentreIdArr = numbersFromTo(1, 69);
 
-const statements = examCentreIdArr.map((centreId) => {
-	return filterStudentsMarks(SUBJECT, centreId, PART);
-});
+const statements = [filterStudentsMarks(SUBJECT, PART)].concat(
+	examCentreIdArr.map((centreId) => {
+		return filterStudentsMarksByExamCentreId(SUBJECT, PART, centreId);
+	})
+);
 let totalStatementsRan = 0;
 
-function convertToCSV(columns: Array<string>, rows: Array<Array<unknown>>) {
-	return columns.join(",").concat(
-		"\n",
-		rows
-			.map((row) => {
-				return Array.from(row).join(",");
-			})
-			.join("\n")
-	);
+function convertToCSV(
+	columns: Array<string>,
+	rows: Array<Array<unknown>>,
+	options?: {
+		except?: Array<string>;
+	}
+) {
+	if (options == undefined) {
+		options = {};
+	}
+	if (options.except == undefined) {
+		options.except = [];
+	}
+
+	const removeIndexes: Array<number> = [];
+
+	if (options.except.length > 0) {
+		for (let i = 0; i < columns.length; i++) {
+			const columnName = columns[i];
+			if (options.except.includes(columnName)) {
+				removeIndexes.push(i);
+			}
+		}
+	}
+
+	return columns
+		.filter((_, i) => !removeIndexes.includes(i))
+		.join(",")
+		.concat(
+			"\n",
+			rows
+				.map((row) => {
+					return Array.from(row)
+						.filter((_, i) => !removeIndexes.includes(i))
+						.join(",");
+				})
+				.join("\n")
+		);
 }
 
 function _centreName(centreName: string) {
@@ -123,11 +162,26 @@ function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 	const timestamp = new Date().toISOString();
 
 	const fileWrites = [];
-	for (let i = 0; i < batchResponse.length; i++) {
+
+	// @ts-expect-error
+	const allMarksResponse = batchResponse[0].response;
+	const csv = convertToCSV(allMarksResponse.columns, allMarksResponse.rows);
+	if (allMarksResponse.rows.length != 0) {
+		const file = `./exports/${timestamp}/marks-${SUBJECT}-${PART}/total.csv`;
+		fileWrites.push(
+			outputFile(file, csv)
+				.then(() => console.log("write: ", file))
+				.catch(console.error)
+		);
+	}
+
+	for (let i = 1; i < batchResponse.length; i++) {
 		const responseItem = batchResponse[i];
 		// @ts-expect-error
 		const sqlResponse = responseItem.response;
-		const csv = convertToCSV(sqlResponse.columns, sqlResponse.rows);
+		const csv = convertToCSV(sqlResponse.columns, sqlResponse.rows, {
+			except: ["centre_name", "district"],
+		});
 		if (sqlResponse.rows.length == 0) {
 			continue;
 		}
@@ -154,7 +208,7 @@ function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 
 	const statementsRanMessage = `ran ${statements.length} statements`;
 	const batchResponse = await runStatements(
-		statements.map((s) => sql.raw(s.sqlQuery)),
+		statements.map((query) => sql.raw(query)),
 		statementsRanMessage
 	);
 	totalStatementsRan += statements.length;
@@ -162,7 +216,7 @@ function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 	console.log("BATCH", batchResponse.length);
 	saveEachResponseAsCSV(
 		batchResponse.map((response, i) => {
-			return { ...statements[i], response };
+			return { query: statements[i], response };
 		})
 	);
 
