@@ -11,7 +11,7 @@ import {
 import { ExamPart, Subject } from "./types";
 
 function extractArgument<T = unknown>(
-	name: "--subject" | "--part",
+	name: "--subject" | "--part" | "--id",
 	allowedValues: Array<T> | undefined = undefined
 ): T {
 	const index = process.argv.indexOf(name) + 1;
@@ -28,6 +28,13 @@ function extractArgument<T = unknown>(
 
 	return value;
 }
+
+let EXPORT_ID = new Date().toISOString();
+
+if (process.argv.includes("--id")) {
+	EXPORT_ID = extractArgument("--id");
+}
+console.log(`EXPORT_ID = ${EXPORT_ID}`);
 
 const SUBJECT = extractArgument("--subject", [
 	"bio",
@@ -51,13 +58,16 @@ console.log(
 
 function filterStudentsMarks(subject: Subject, part: "part1" | "part2") {
 	return `SELECT
+			students.name,
+			students.subject_group_id AS stream,
 			students.index_no,
 			subject_marks.${part}
 		FROM ${table__STUDENTS} AS students
 		JOIN ${view__SUBJECT_FINAL_MARKS(subject)} AS subject_marks
 		ON students.index_no = subject_marks.index_no
-		WHERE subject_marks.${part} > 0 AND subject_marks.${part} < 100
-		ORDER BY subject_marks.${part} DESC`;
+		WHERE subject_marks.${part} >= 0 AND subject_marks.${part} <= 100
+		ORDER BY subject_marks.${part} DESC
+		`;
 }
 
 function filterStudentsMarksByExamCentreId(
@@ -76,10 +86,12 @@ function filterStudentsMarksByExamCentreId(
 		throw new Error("Unknown subject:", subject);
 	}
 
+	// students.subject_group_id AS stream,
 	return `
 		SELECT
 			DISTINCT
 			students.index_no,
+			students.name,
 			subject_marks.${part},
 			exam_centres.centre_name,
 			exam_districts.district,
@@ -174,7 +186,6 @@ function _centreName(centreName: string) {
 
 function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 	if (batchResponse.length == 0) return;
-	const timestamp = new Date().toISOString();
 
 	const fileWrites = [];
 
@@ -182,7 +193,7 @@ function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 	const allMarksResponse = batchResponse[0].response;
 	const csv = convertToCSV(allMarksResponse.columns, allMarksResponse.rows);
 	if (allMarksResponse.rows.length != 0) {
-		const file = `./exports/${timestamp}/marks-${SUBJECT}-${PART}/total.csv`;
+		const file = `./exports/${EXPORT_ID}/marks-${SUBJECT}-${PART}/total.csv`;
 		fileWrites.push(
 			outputFile(file, csv)
 				.then(() => console.log("write: ", file))
@@ -195,7 +206,7 @@ function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 		// @ts-expect-error
 		const sqlResponse = responseItem.response;
 		const csv = convertToCSV(sqlResponse.columns, sqlResponse.rows, {
-			except: ["centre_name", "district", "entered_on"],
+			// except: ["centre_name", "district", "entered_on"],
 		});
 		if (sqlResponse.rows.length == 0) {
 			continue;
@@ -205,7 +216,7 @@ function saveEachResponseAsCSV(batchResponse: Array<unknown>) {
 			sqlResponse.rows[0].district as string | "unknown_district"
 		).toLowerCase();
 
-		const file = `./exports/${timestamp}/marks-${SUBJECT}-${PART}/${district}/${centreName}.csv`;
+		const file = `./exports/${EXPORT_ID}/marks-${SUBJECT}-${PART}/${district}/${centreName}.csv`;
 		fileWrites.push(
 			outputFile(file, csv)
 				.then(() => console.log("write: ", file))
