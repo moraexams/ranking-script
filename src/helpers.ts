@@ -493,3 +493,43 @@ export async function runStatements(
 
   return batchResponse;
 }
+
+export function convertToCSV(
+	columns: Array<string>,
+	rows: Array<Array<unknown>>,
+	options?: {
+		except?: Array<string>;
+	}
+) {
+	if (options == undefined) {
+		options = {};
+	}
+	if (options.except == undefined) {
+		options.except = [];
+	}
+
+	const removeIndexes: Array<number> = [];
+
+	if (options.except.length > 0) {
+		for (let i = 0; i < columns.length; i++) {
+			const columnName = columns[i];
+			if (options.except.includes(columnName)) {
+				removeIndexes.push(i);
+			}
+		}
+	}
+
+	return columns
+		.filter((_, i) => !removeIndexes.includes(i))
+		.join(",")
+		.concat(
+			"\n",
+			rows
+				.map((row) => {
+					return Array.from(row)
+						.filter((_, i) => !removeIndexes.includes(i))
+						.join(",");
+				})
+				.join("\n")
+		);
+}
