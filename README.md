@@ -18,11 +18,10 @@ turso auth signup
 
 1. Copy the mysql dump to `sql2sqlite` folder
 2. Run the following from the main directory `ranking-script`
+
    ```bash
    ./sql2sqlite/convert.sh
    ```
-
-````
 
 3. Copy the relevant environment variables to .env
 
@@ -73,4 +72,7 @@ instantiating the project. The option cannot be edited for existing projects.
 If it's a local database, currently there are no known workarounds :(
 
 This project was created using `bun init` in bun v1.0.18.
-````
+
+```
+
+```
