@@ -9,7 +9,7 @@
    ```bash
    ./sql2sqlite/convert.sh
    ```
-3. Copy the relevant environment variables to .env and move to ranking script
+3. Copy the relevant environment variables to .env
 
 #### Todo: improve the flow by integrating the scripts using `Bun.spawn` and integrate drizzle studio for instant tables access
 
