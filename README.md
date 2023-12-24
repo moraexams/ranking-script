@@ -70,9 +70,3 @@ If it's hosted on Turso, the math functions extensions must be enabled while
 instantiating the project. The option cannot be edited for existing projects.
 
 If it's a local database, currently there are no known workarounds :(
-
-This project was created using `bun init` in bun v1.0.18.
-
-```
-
-```
