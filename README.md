@@ -1,10 +1,25 @@
-# Ranking Script
+# Mora Exams Scripts
+
+## Conversion Script
+
+### Setup
+
+1. Copy the mysql dump to `sql2sqlite` folder
+2. Run the following from the main directory `ranking-script`
+   ```bash
+   ./sql2sqlite/convert.sh
+   ```
+3. Copy the relevant environment variables to .env and move to ranking script
+
+#### Todo: improve the flow by integrating the scripts using `Bun.spawn` and integrate drizzle studio for instant tables access
+
+## Ranking Script
 
 This repository contains the scripts which does z-score, rank calculations for
 Mora Exams. The calculations are currently done inside a libsql (fork of sqlite)
 database (locally or hosted on Turso).
 
-## Setup
+### Setup
 
 To install dependencies:
 
@@ -31,7 +46,7 @@ After setting up these values, the script can be ran using:
 bun start
 ```
 
-## An Important Note
+### An Important Note
 
 Currently, sqlite's SQRT function is used while calculating z-score. SQRT
 function is only available when sqlite is compiled using the
