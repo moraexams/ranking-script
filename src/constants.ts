@@ -140,10 +140,10 @@ export const SUBJECT_RESULTS_DISTRIB_MARKS = {
     W: 0,
   },
   ict: {
-    A: 68,
-    B: 56,
+    A: 65,
+    B: 55,
     C: 45,
-    S: 28,
+    S: 36,
     W: 0,
   },
 };
