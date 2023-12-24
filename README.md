@@ -70,3 +70,11 @@ If it's hosted on Turso, the math functions extensions must be enabled while
 instantiating the project. The option cannot be edited for existing projects.
 
 If it's a local database, currently there are no known workarounds :(
+
+Currently you can create an sqlite dump of an already created turso databse with math functions enabled using
+
+```bash
+turso db shell me22math .dump > me22math.sql
+```
+
+It still doesn't prove that we can create a locally accessible db file using this method. Further testing is required on how to convert this to an sqlite db file and whether the enabled math functions are preserved in the dump.
