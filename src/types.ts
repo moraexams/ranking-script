@@ -1,13 +1,43 @@
 export type Subject = "maths" | "physics" | "chemistry" | "bio" | "ict";
-// TODO add other streams
-export type Stream =
-	| "Agri (BIO)"
-	| "BIO"
-	| "BIO_CHEMISTRY_ICT"
-	| "BIO_PHYSICS_ICT"
-	| "ICT (MATHS)"
-	| "ICT ONLY"
-	| "MATHS";
+
+export const STREAMS = [
+	"Agri (BIO)",
+	"BIO",
+	"BIO_CHEMISTRY_ICT",
+	"BIO_PHYSICS_ICT",
+	"ICT (MATHS)",
+	"ICT ONLY",
+	"MATHS",
+] as const;
+
+export type Stream = (typeof STREAMS)[number];
+
+export const DISTRICTS = [
+	"Ampara",
+	"Anuradhapura",
+	"Badulla",
+	"Batticaloa",
+	"Colombo",
+	"Galle",
+	"Gampaha",
+	"Hambantota",
+	"Jaffna",
+	"Kalutara",
+	"Kandy",
+	"Kegalle",
+	"Kilinochchi",
+	"Kurunegala",
+	"Mannar",
+	"Matale",
+	"Matara",
+	"Mullaitivu",
+	"Nuwara Eliya",
+	"Puttalam",
+	"Trincomalee",
+	"Vavuniya",
+] as const;
+
+export type District = (typeof DISTRICTS)[number];
 
 export type ResultValue = "A" | "B" | "C" | "S" | "W";
 export type ExamPart = "part1" | "part2";

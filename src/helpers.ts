@@ -108,7 +108,7 @@ export function separateSubjectMarksIntoView(subject: Subject) {
     whereCondition =
       "students.subject_group_id IN ('MATHS', 'BIO', 'Agri (BIO)', 'BIO_CHEMISTRY_ICT')";
   } else if (subject == "ict") {
-    whereCondition = `students.subject_group_id IN ('ICT (MATHS)', 'Other', 'ICT ONLY')`;
+		whereCondition = `students.subject_group_id IN ('ICT (MATHS)', 'Other', 'ICT ONLY', 'BIO_PHYSICS_ICT')`;
   } else {
     assertNever(subject);
   }
