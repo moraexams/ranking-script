@@ -2,6 +2,10 @@
 
 ## Conversion Script
 
+Converts MySQL dump to SQLite3 compatible dump (including MySQL `KEY xxxxx` statements from the `CREATE` block). sql2sqlite is directly cloned from https://github.com/dumblob/mysql2sqlite
+
+Additional Scripting is done to make the mora exams 23 workflow of converting from sql to sqlite easier in some ways.
+
 Requirement: Turso CLI if using turso, Instuctions to install:
 
 https://docs.turso.tech/tutorials/get-started-turso-cli/step-01-installation
