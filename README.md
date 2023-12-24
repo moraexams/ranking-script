@@ -2,6 +2,18 @@
 
 ## Conversion Script
 
+Requirement: Turso CLI if using turso, Instuctions to install:
+
+https://docs.turso.tech/tutorials/get-started-turso-cli/step-01-installation
+
+Make sure to login to the turso account you are going to create the database in
+
+```bash
+turso auth login
+#or
+turso auth signup
+```
+
 ### Setup
 
 1. Copy the mysql dump to `sql2sqlite` folder
@@ -9,6 +21,9 @@
    ```bash
    ./sql2sqlite/convert.sh
    ```
+
+````
+
 3. Copy the relevant environment variables to .env
 
 #### Todo: improve the flow by integrating the scripts using `Bun.spawn` and integrate drizzle studio for instant tables access
@@ -58,3 +73,4 @@ instantiating the project. The option cannot be edited for existing projects.
 If it's a local database, currently there are no known workarounds :(
 
 This project was created using `bun init` in bun v1.0.18.
+````
