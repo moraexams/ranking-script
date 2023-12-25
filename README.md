@@ -2,9 +2,12 @@
 
 ## Conversion Script
 
-Converts MySQL dump to SQLite3 compatible dump (including MySQL `KEY xxxxx` statements from the `CREATE` block). sql2sqlite is directly cloned from https://github.com/dumblob/mysql2sqlite
+Converts MySQL dump to SQLite3 compatible dump (including MySQL `KEY xxxxx`
+statements from the `CREATE` block). sql2sqlite is directly cloned from
+https://github.com/dumblob/mysql2sqlite
 
-Additional Scripting is done to make the mora exams 23 workflow of converting from sql to sqlite easier in some ways.
+Additional Scripting is done to make the mora exams 23 workflow of converting
+from sql to sqlite easier in some ways.
 
 Requirement: Turso CLI if using turso, Instuctions to install:
 
@@ -20,14 +23,13 @@ turso auth signup
 
 ### Setup
 
-1. Copy the mysql dump to `sql2sqlite` folder
-2. Run the following from the main directory `ranking-script`
-
+1. Dump the mysql database as SQL.
+2. Copy the mysql dump (must be a .sql file) to `sql2sqlite` folder
+3. Run the following from the main directory `ranking-script`
    ```bash
    ./sql2sqlite/convert.sh
    ```
-
-3. Copy the relevant environment variables to .env
+4. Copy the relevant environment variables to .env
 
 #### Todo: improve the flow by integrating the scripts using `Bun.spawn` and integrate drizzle studio for instant tables access
 
@@ -53,9 +55,9 @@ If the database is hosted on Turso, these environment variables must be setup
 
 ```
 IS_LOCAL=false
-LOCAL_DB_FILE="./me22.db"
-PUBLIC_TURSO_DATABASE_AUTH_TOKEN=""
-PUBLIC_TURSO_DATABASE_URL=""
+LOCAL_DB_FILE="./me23.db"
+TURSO_DATABASE_AUTH_TOKEN=""
+TURSO_DATABASE_URL=""
 ```
 
 After setting up these values, the script can be ran using:
@@ -75,10 +77,13 @@ instantiating the project. The option cannot be edited for existing projects.
 
 If it's a local database, currently there are no known workarounds :(
 
-Currently you can create an sqlite dump of an already created turso databse with math functions enabled using
+Currently you can create an sqlite dump of an already created turso databse with
+math functions enabled using
 
 ```bash
 turso db shell hosted_db_name .dump > sqlite_dump.sql
 ```
 
-It still doesn't prove that we can create a locally accessible db file using this method. Further testing is required on how to convert this to an sqlite db file and whether the enabled math functions are preserved in the dump.
+It still doesn't prove that we can create a locally accessible db file using
+this method. Further testing is required on how to convert this to an sqlite db
+file and whether the enabled math functions are preserved in the dump.
