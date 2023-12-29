@@ -1,4 +1,11 @@
-export type Subject = "maths" | "physics" | "chemistry" | "bio" | "ict";
+export const SUBJECTS = [
+	"maths",
+	"physics",
+	"chemistry",
+	"bio",
+	"ict",
+] as const;
+export type Subject = (typeof SUBJECTS)[number];
 
 export const STREAMS = [
 	"Agri (BIO)",

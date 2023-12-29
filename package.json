@@ -5,7 +5,9 @@
   "scripts": {
     "start": "bun run src/generate-rank.ts",
     "export-as-csv": "bun run src/export-as-csv.ts",
-    "export-top-results": "bun run src/export-top-results.ts"
+    "export-top-results": "bun run src/export-top-results.ts",
+    "export-marks-sheet": "bun run src/export-marks-sheet.ts",
+    "export-summary-report-data": "bun run src/export-summary-report-data.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.4.0-pre.5",

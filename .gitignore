@@ -178,6 +178,6 @@ me22.db
 exports
 *.db
 *.sql
-export-summary
 result-exports
 exports-marks-sheet
+export-summary
