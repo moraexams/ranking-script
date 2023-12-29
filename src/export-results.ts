@@ -27,7 +27,7 @@ function filterStreamResults(stream: Stream, district: District) {
 	ORDER BY tbl_final_results.island_rank`;
 }
 
-const STREAMS_TO_EXPORT: Array<Stream> = ["MATHS", "BIO"];
+const STREAMS_TO_EXPORT: Array<Stream> = ["MATHS", "BIO", "ICT (MATHS)"];
 const statements = new Array(STREAMS_TO_EXPORT.length * DISTRICTS.length);
 
 for (let s = 0; s < STREAMS_TO_EXPORT.length; s++) {

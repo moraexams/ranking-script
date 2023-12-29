@@ -53,3 +53,5 @@ export interface SubjectZScoreCalculationValues {
 	average?: number;
 	standardDeviation?: number;
 }
+
+export type Medium = "english" | "tamil";

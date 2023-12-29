@@ -1,12 +1,54 @@
 import { outputFile } from "fs-extra";
 import { sql } from "drizzle-orm";
 import { convertToCSV, runStatements } from "./helpers";
-import { ResultValue, Subject, SUBJECTS } from "./types";
+import { ResultValue, Subject, SUBJECTS, Medium } from "./types";
 
 let EXPORT_ID = new Date().toISOString();
 
 function filterSubjectResults(subject: Subject) {
-	function countResultsForSubject(result: ResultValue | "total") {
+	function countTotalStudents() {
+		return `(SELECT
+				COUNT(*)
+			FROM tbl_students
+			JOIN zscore_${subject} AS z
+			ON tbl_students.index_no = z.index_no
+			WHERE z.result <> 'AB'
+			) AS 'Total'
+			`;
+	}
+	function countResultsForSubjectInAllDistricts(result: ResultValue) {
+		return `(
+			SELECT
+				COUNT(*)
+			FROM tbl_students
+			JOIN zscore_${subject} AS z
+			ON tbl_students.index_no = z.index_no
+			WHERE z.result = '${result}'
+		) AS '${result}'`;
+	}
+	function countMediumTotal(medium: Medium) {
+		return `(
+			SELECT
+				COUNT(*)
+			FROM tbl_students
+			JOIN zscore_${subject} AS z
+			ON tbl_students.index_no = z.index_no
+			WHERE tbl_students.medium = '${medium}' AND z.result <> 'AB'
+		) AS '${medium}'`;
+	}
+	function countMediumInEachDistrict(medium: Medium) {
+		return `(
+			SELECT
+				COUNT(*)
+			FROM tbl_students
+			JOIN zscore_${subject} AS z
+			ON tbl_students.index_no = z.index_no
+			WHERE tbl_students.medium = '${medium}' AND tbl_students.district_ranking = tbl_exam_districts.district AND z.result <> 'AB'
+		) AS '${medium}'`;
+	}
+	function countResultsForSubjectForEachDistrict(
+		result: ResultValue | "total"
+	) {
 		if (result == "total") {
 			return `(
 			SELECT
@@ -14,7 +56,7 @@ function filterSubjectResults(subject: Subject) {
 			FROM tbl_students
 			JOIN zscore_${subject} AS z
 			ON tbl_students.index_no = z.index_no
-			WHERE tbl_students.district_ranking = tbl_exam_districts.district
+			WHERE tbl_students.district_ranking = tbl_exam_districts.district AND z.result <> 'AB'
 		) AS 'Total'`;
 		}
 		return `(
@@ -23,25 +65,41 @@ function filterSubjectResults(subject: Subject) {
 			FROM tbl_students
 			JOIN zscore_${subject} AS z
 			ON tbl_students.index_no = z.index_no
-			WHERE z.result = '${result}' AND tbl_students.district_ranking = tbl_exam_districts.district
+			WHERE z.result = '${result}' AND tbl_students.district_ranking = tbl_exam_districts.district AND z.result <> 'AB'
 		) AS '${result}'`;
 	}
 
 	return `SELECT
 		DISTINCT tbl_exam_districts.district AS 'District',
-		${countResultsForSubject("A")},
-		${countResultsForSubject("B")},
-		${countResultsForSubject("C")},
-		${countResultsForSubject("S")},
-		${countResultsForSubject("W")},
-		${countResultsForSubject("total")},
+		${countResultsForSubjectForEachDistrict("A")},
+		${countResultsForSubjectForEachDistrict("B")},
+		${countResultsForSubjectForEachDistrict("C")},
+		${countResultsForSubjectForEachDistrict("S")},
+		${countResultsForSubjectForEachDistrict("W")},
+		${countResultsForSubjectForEachDistrict("total")},
+		'',
+		${countMediumInEachDistrict("english")},
+		${countMediumInEachDistrict("tamil")},
 		'${subject}' AS subject
 	FROM tbl_exam_districts
-	WHERE tbl_exam_districts.telephone <> 'NO'`;
+	WHERE tbl_exam_districts.telephone <> 'NO'
+	UNION
+	SELECT
+		'_Grand_Total',
+		${countResultsForSubjectInAllDistricts("A")},
+		${countResultsForSubjectInAllDistricts("B")},
+		${countResultsForSubjectInAllDistricts("C")},
+		${countResultsForSubjectInAllDistricts("S")},
+		${countResultsForSubjectInAllDistricts("W")},
+		${countTotalStudents()},
+		'',
+		${countMediumTotal("english")},
+		${countMediumTotal("tamil")},
+		'${subject}' AS subject
+	`;
 }
 
 const statements = new Array(SUBJECTS.length);
-
 for (let s = 0; s < SUBJECTS.length; s++) {
 	statements[s] = filterSubjectResults(SUBJECTS[s]);
 }
