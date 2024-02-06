@@ -519,17 +519,21 @@ export function convertToCSV(
 		}
 	}
 
-	return columns
+	let body = columns
 		.filter((_, i) => !removeIndexes.includes(i))
 		.join(",")
-		.concat(
-			"\n",
-			rows
-				.map((row) => {
-					return Array.from(row)
-						.filter((_, i) => !removeIndexes.includes(i))
-						.join(",");
-				})
-				.join("\n")
-		);
+		.concat("\n");
+
+	for (const row of rows) {
+		let stringifiedRow = Array.from(row)
+			.filter((_, i) => !removeIndexes.includes(i))
+			.join(",");
+
+		if (stringifiedRow.includes("\n")) {
+			stringifiedRow = stringifiedRow.replaceAll("\n", "");
+		}
+
+		body = body.concat(stringifiedRow, "\n");
+	}
+	return body;
 }
