@@ -8,7 +8,8 @@
     "export-top-results": "bun run src/export-top-results.ts",
     "export-marks-sheet": "bun run src/export-marks-sheet.ts",
     "export-summary-report-data": "bun run src/export-summary-report-data.ts",
-    "export-results": "bun run src/export-results.ts"
+    "export-results": "bun run src/export-results.ts",
+    "export-top-25-colombo": "bun run src/export-top-25-colombo.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.4.0-pre.5",
